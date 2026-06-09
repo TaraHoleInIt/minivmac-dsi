@@ -1,0 +1,6 @@
+nitrofs/*
+build/*
+.vscode
+*.DS_Store
+*.nds
+*.sym

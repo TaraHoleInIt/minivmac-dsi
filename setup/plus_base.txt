@@ -1,0 +1,2 @@
+./tool -t larm -m Plus -sound 0 -speed a -ta 0 -mem 1M -min-extn
+

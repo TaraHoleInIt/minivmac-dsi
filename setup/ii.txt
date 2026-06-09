@@ -1,0 +1,1 @@
+-t larm -m II -sound 0 -speed a -ta 0 -mem 8M -min-extn -hres 512 -vres 342 -depth 0
