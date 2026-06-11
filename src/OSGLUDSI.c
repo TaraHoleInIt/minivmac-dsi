@@ -44,6 +44,10 @@
 
 #ifdef WantOSGLUDSI
 
+#include "lvgl.h"
+#include "ui.h"
+#include "ui_selections.h"
+
 LOCALVAR blnr HaveSoundOut = falseblnr;
 
 /* --- some simple utilities --- */
@@ -593,6 +597,8 @@ LOCALFUNC blnr LoadMacRom(void)
 	return trueblnr; /* keep launching Mini vMac, regardless */
 }
 
+LOCALVAR blnr wasInitOK = falseblnr;
+
 /* --- DS(i) system definitions --- */
 
 LOCALFUNC void systemSetupTimers( void );
@@ -626,7 +632,7 @@ uint32_t systemGetTicks( void ) {
 
 /* --- DS(i) input globals --- */
 
-static touchPosition touchPos = {
+static touchPosition inputTouchPos = {
 	.px = 0,
 	.py = 0,
 	.rawx = 0,
@@ -639,22 +645,20 @@ static int inputKeysDown = 0;
 static int inputKeysHeld = 0;
 static int inputKeysUp = 0;
 
+LOCALVAR UIMouseMode inputMouseMode = UI_SEL_MOUSE_MODE_SCALED;
+LOCALVAR UIMouseButton inputMouseButton = UI_SEL_MOUSE_BUTTON_L;
+
+LOCALVAR int inputMouseButtonBit = 0;
+LOCALVAR int inputMouseAcceleration = 2;
+
 /* --- DS(i) video definitions --- */
 
-#include "lvgl.h"
-#include "ui.h"
-
-typedef void ( *RenderScreenProc ) ( int scrollX, int scrolly );
+typedef void ( *RenderScreenProc ) ( void );
 
 typedef enum {
 	VIDEO_SCREEN_ON_MAIN_UI_ON_TOUCH = 0,
 	VIDEO_SCREEN_ON_TOUCH_UI_ON_MAIN
 } ScreenSetup;
-
-typedef enum {
-	SUBPIXEL_ORDER_RGB = 0,
-	SUBPIXEL_ORDER_BGR
-} SubpixelOrder;
 
 LOCALFUNC void videoChangeSetup( ScreenSetup setup );
 LOCALFUNC void videoSwapScreens( void );
@@ -668,8 +672,8 @@ LOCALFUNC void videoCalcStrips( void );
 LOCALFUNC void videoInit( void );
 LOCALFUNC int videoSetupPalette( uint16_t* palette );
 
-LOCALFUNC void videoFrameScaled( int scrollX, int scrollY );
-LOCALFUNC void videoFrameUnscaled( int scrollX, int scrollY );
+LOCALFUNC void videoFrameScaled( void );
+LOCALFUNC void videoFrameUnscaled( void );
 
 LOCALFUNC void videoWriteDebug( const char* text );
 LOCALFUNC void videoWriteMessage( const char* text );
@@ -680,6 +684,8 @@ LOCALFUNC void videoLVGLTouchRead( lv_indev_t* indev, lv_indev_data_t* data );
 
 LOCALFUNC void videoSetScaled( void );
 LOCALFUNC void videoSetUnscaled( void );
+
+LOCALPROC uiSetupDefaults( void );
 
 /* --- DS(i) video globals --- */
 
@@ -739,8 +745,8 @@ static ScreenSetup videoSetup = VIDEO_SCREEN_ON_MAIN_UI_ON_TOUCH;
 static volatile int videoIsInverted = 0;
 static volatile int videoIsSubpixel = 0;
 
-static volatile SubpixelOrder videoSubpixelMain = SUBPIXEL_ORDER_RGB;
-static volatile SubpixelOrder videoSubpixelSub = SUBPIXEL_ORDER_RGB;
+static volatile UISubpxOrder videoSubpixelMain = UI_SEL_SUBPX_ORDER_RGB;
+static volatile UISubpxOrder videoSubpixelSub = UI_SEL_SUBPX_ORDER_RGB;
 
 /* --- DS(i) video functions --- */
 
@@ -757,9 +763,9 @@ LOCALINLINEFUNC int videoGetGreyTexture( void ) {
 
 	if ( videoIsSubpixel == 1 ) {
 		if ( videoSetup == VIDEO_SCREEN_ON_MAIN_UI_ON_TOUCH )
-			return ( videoSubpixelMain == SUBPIXEL_ORDER_RGB ) ? palSubpixelRGB : palSubpixelBGR;
+			return ( videoSubpixelMain == UI_SEL_SUBPX_ORDER_RGB ) ? palSubpixelRGB : palSubpixelBGR;
 		else
-			return ( videoSubpixelSub == SUBPIXEL_ORDER_RGB ) ? palSubpixelRGB : palSubpixelBGR;
+			return ( videoSubpixelSub == UI_SEL_SUBPX_ORDER_RGB ) ? palSubpixelRGB : palSubpixelBGR;
 	}
 
 	return ( videoIsInverted ) ? palGreyTexture_Inverted : palGreyTexture;
@@ -831,10 +837,13 @@ LOCALFUNC void videoSetupLVGL( void ) {
     lv_indev_set_read_cb( lvInput, videoLVGLTouchRead );
 
     ui_init( );
+	uiSetupDefaults( );
 
 	// HACKHACKHACK
+	// This is just so the initial settings are reflected in the emulator
 	uiDisplayTabValueChangedCallback( NULL );
 	uiEmulatorTabValueChangedCallback( NULL );
+	uiMouseTabValueChangedCallback( NULL );
 }
 
 LOCALFUNC void videoLVGLFlush( lv_display_t* disp, const lv_area_t* area, uint8_t* buf ) {
@@ -848,8 +857,8 @@ LOCALFUNC void videoLVGLFlush( lv_display_t* disp, const lv_area_t* area, uint8_
 LOCALFUNC void videoLVGLTouchRead( lv_indev_t* indev, lv_indev_data_t* data ) {
     if ( ( inputKeysHeld & KEY_TOUCH ) && videoUIHasFocus( ) ) {
         data->state = LV_INDEV_STATE_PRESSED;
-        data->point.x = touchPos.px;
-        data->point.y = touchPos.py;
+        data->point.x = inputTouchPos.px;
+        data->point.y = inputTouchPos.py;
     } else {
         data->state = LV_INDEV_STATE_RELEASED;
     }
@@ -899,6 +908,8 @@ LOCALFUNC void videoInit( void ) {
 
 	consoleSelect( &videoMacMsgConsole );
 	consoleSetColor( &videoMacMsgConsole, CONSOLE_LIGHT_CYAN );
+
+	printf( "hi\n" );
 
 	videoSetupLVGL( );
 
@@ -1051,7 +1062,7 @@ LOCALFUNC void videoSetupFBTexture( void ) {
     assert( glTexImageNtr2D( GL_RGB4, 256, 512, TEXGEN_TEXCOORD, NULL, NULL ) == 1 );
 }
 
-LOCALFUNC void videoFrameScaled( int scrollX, int scrollY ) {
+LOCALFUNC void videoFrameScaled( void ) {
     static const int orthoLeft = floattof32( 0.0f );
     static const int orthoRight = floattof32( 1.0f );
     static const int orthoBottom = floattof32( 1.0f );
@@ -1147,11 +1158,9 @@ LOCALFUNC void videoFrameScaled( int scrollX, int scrollY ) {
     glEnd( );
 
     glFlush( 0 );
-
-    renderNeedsRefresh = 0;
 }
 
-LOCALFUNC void videoFrameUnscaled( int scrollX, int scrollY ) {
+LOCALFUNC void videoFrameUnscaled( void ) {
     static const int orthoLeft = floattof32( 0.0f );
     static const int orthoRight = floattof32( 1.0f );
     static const int orthoBottom = floattof32( 1.0f );
@@ -1193,14 +1202,6 @@ LOCALFUNC void videoFrameUnscaled( int scrollX, int scrollY ) {
     static const int depthNine = floattof32( 9.0f );
     static const int depthTen = floattof32( 10.0f );
     static const int screenScaleY = floattof32( 2.6666666667f );
-    static int lastScrollX = -1;
-    static int lastScrollY = -1;
-
-    if ( ( ( scrollX == lastScrollX ) && ( scrollY == lastScrollY ) ) && ! renderNeedsRefresh )
-        return;
-
-    lastScrollX = scrollX;
-    lastScrollY = scrollY;
 
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity( );
@@ -1219,8 +1220,8 @@ LOCALFUNC void videoFrameUnscaled( int scrollX, int scrollY ) {
     glColor3b( 255, 255, 255 );
 
     glTranslatef32( 
-        -( divf32( inttof32( scrollX ), scaleX  ) ),
-        -( divf32( inttof32( scrollY ), scaleY ) ),
+        -( divf32( inttof32( videoScrollX ), scaleX  ) ),
+        -( divf32( inttof32( videoScrollY ), scaleY ) ),
         translateZ
     );
 
@@ -1293,8 +1294,184 @@ LOCALFUNC void videoFrameUnscaled( int scrollX, int scrollY ) {
         }
     glEnd( );
     glFlush( 0 );
+}
 
-    renderNeedsRefresh = 0;
+/* --- UI System Definitions --- */
+
+#define MaxKeyboardEvents 256
+
+/* --- UI System Types --- */
+
+typedef struct {
+	int macKey;
+	int down;
+} KeyboardEvent;
+
+typedef struct {
+	int macKey;
+	int shiftMod;
+} MacKeyDef;
+
+/* --- UI System Globals --- */
+
+LOCALVAR UIEmulatorSpeed speedSetting = UI_SEL_EMULATOR_SPEED_UNLIMITED;
+
+LOCALVAR KeyboardEvent keyboardEvents[ MaxKeyboardEvents ];
+LOCALVAR int keyboardEventCount = 0;
+LOCALVAR int keyboardEventPos = 0;
+
+LOCALVAR const MacKeyDef keyboardConversionTable[ 128 ] = {
+	// Non printable chars
+	{ -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 },
+	{ -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 },
+	{ -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 },
+	{ -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 }, { -1, 0 },
+	{ MKC_Space, 0 },		// Space
+	{ MKC_1, 1 },			// !
+	{ MKC_SingleQuote, 1 },	// "
+	{ MKC_3, 1 },			// #
+	{ MKC_4, 1 },			// $
+	{ MKC_5, 1 },			// %
+	{ MKC_7, 1 },			// &
+	{ MKC_SingleQuote, 0 },	// '
+	{ MKC_9, 1 },			// (
+	{ MKC_0, 1 },			// )
+	{ MKC_8, 1 },			// *
+	{ MKC_Equal, 1 },		// +
+	{ MKC_Comma, 0 },		// ,
+	{ MKC_Minus, 0 },		// -
+	{ MKC_Period, 0 },		// .
+	{ MKC_Slash, 0 },		// /
+	{ MKC_0, 0 },			// 0
+	{ MKC_1, 0 },			// 1
+	{ MKC_2, 0 },			// 2
+	{ MKC_3, 0 },			// 3
+	{ MKC_4, 0 },			// 4
+	{ MKC_5, 0 },			// 5
+	{ MKC_6, 0 },			// 6
+	{ MKC_7, 0 },			// 7
+	{ MKC_8, 0 },			// 8
+	{ MKC_9, 0 },			// 9
+	{ MKC_SemiColon, 1 },	// :
+	{ MKC_SemiColon, 0 },	// ;
+	{ MKC_Comma, 1 },		// <
+	{ MKC_Equal, 0 },		// =
+	{ MKC_Period, 1 },		// >
+	{ MKC_Slash, 1 },		// ?
+
+	{ MKC_2, 1 },			// @
+	{ MKC_A, 1 },			// A
+	{ MKC_B, 1 },			// B
+	{ MKC_C, 1 },			// C
+	{ MKC_D, 1 },			// D
+	{ MKC_E, 1 },			// E
+	{ MKC_F, 1 },			// F
+	{ MKC_G, 1 },			// G
+	{ MKC_H, 1 },			// H
+	{ MKC_I, 1 },			// I
+	{ MKC_J, 1 },			// J
+	{ MKC_K, 1 },			// K
+	{ MKC_L, 1 },			// L
+	{ MKC_M, 1 },			// M
+	{ MKC_N, 1 },			// N
+	{ MKC_O, 1 },			// O
+	{ MKC_P, 1 },			// P
+	{ MKC_Q, 1 },			// Q
+	{ MKC_R, 1 },			// R
+	{ MKC_S, 1 },			// S
+	{ MKC_T, 1 },			// T
+	{ MKC_U, 1 },			// U
+	{ MKC_V, 1 },			// V
+	{ MKC_W, 1 },			// W
+	{ MKC_X, 1 },			// X
+	{ MKC_Y, 1 },			// Y
+	{ MKC_Z, 1 },			// Z
+	{ MKC_LeftBracket, 0 },	// [
+	{ MKC_BackSlash, 0 },	// backslash
+	{ MKC_RightBracket, 0 },// ]
+	{ MKC_6, 1 },			// ^
+	{ MKC_Minus, 1 },		// _
+
+	{ MKC_Grave, 0 },		// `
+	{ MKC_A, 0 },			// a
+	{ MKC_B, 0 },			// b
+	{ MKC_C, 0 },			// c
+	{ MKC_D, 0 },			// d
+	{ MKC_E, 0 },			// e
+	{ MKC_F, 0 },			// f
+	{ MKC_G, 0 },			// g
+	{ MKC_H, 0 },			// h
+	{ MKC_I, 0 },			// i
+	{ MKC_J, 0 },			// j
+	{ MKC_K, 0 },			// k
+	{ MKC_L, 0 },			// l
+	{ MKC_M, 0 },			// m
+	{ MKC_N, 0 },			// n
+	{ MKC_O, 0 },			// o
+	{ MKC_P, 0 },			// p
+	{ MKC_Q, 0 },			// q
+	{ MKC_R, 0 },			// r
+	{ MKC_S, 0 },			// s
+	{ MKC_T, 0 },			// t
+	{ MKC_U, 0 },			// u
+	{ MKC_V, 0 },			// v
+	{ MKC_W, 0 },			// w
+	{ MKC_X, 0 },			// x
+	{ MKC_Y, 0 },			// y
+	{ MKC_Z, 0 },			// z
+	{ MKC_LeftBracket, 1 },	// {
+	{ MKC_BackSlash, 1 },	// |
+	{ MKC_RightBracket, 1 },// }
+	{ MKC_Grave, 1 },		// ~
+	{ MKC_None, 0 }			// del
+};
+
+/* --- Keyboard stuff --- */
+
+LOCALPROC keyboardClearEvents( void ) {
+	// 0xFF == -1 == not a key
+	memset( keyboardEvents, 0xFF, sizeof( keyboardEvents ) );
+
+	keyboardEventCount = 0;
+	keyboardEventPos = 0;
+}
+
+LOCALPROC keyboardAddKeyEvent0( int macKey, int down ) {
+	assert( keyboardEventCount < MaxKeyboardEvents );
+
+	keyboardEvents[ keyboardEventCount ].macKey = macKey;
+	keyboardEvents[ keyboardEventCount++ ].down = down;
+}
+
+LOCALPROC keyboardAddKeyEvent( int macKey, int shiftMod ) {
+	if ( shiftMod )
+		keyboardAddKeyEvent0( MKC_Shift, 1 );
+
+	keyboardAddKeyEvent0( macKey, 1 );
+	keyboardAddKeyEvent0( macKey, 0 );
+
+	if ( shiftMod )
+		keyboardAddKeyEvent0( MKC_Shift, 0 );
+}
+
+LOCALPROC keyboardMacKeyFromKeyboard( int c, int* outMacKey, int* outShiftMod ) {
+	assert( outMacKey != NULL );
+	assert( outShiftMod != NULL );
+
+	*outMacKey = keyboardConversionTable[ c ].macKey;
+	*outShiftMod = keyboardConversionTable[ c ].shiftMod;
+}
+
+LOCALPROC keyboardMacKeyFromString( const char* str ) {
+	int macKey = 0;
+	int shiftMod = 0;
+
+	while ( *str ) {
+		keyboardMacKeyFromKeyboard( *str, &macKey, &shiftMod );
+		keyboardAddKeyEvent( macKey, shiftMod );
+
+		str++;
+	}
 }
 
 /* --- LVGL Helpers --- */
@@ -1307,39 +1484,28 @@ LOCALFUNC void uiGetDropdownselected( lv_obj_t* obj, char* buf, size_t bufLen ) 
 	lv_dropdown_get_selected_str( obj, buf, bufLen );
 }
 
+LOCALPROC uiSetupDefaults( void ) {
+	// Mouse tab
+	lv_dropdown_set_selected( ui_uiDropdownMouseMode, inputMouseMode );
+	lv_slider_set_value( ui_uiSliderAcceleration, inputMouseAcceleration, LV_ANIM_OFF );
+	lv_dropdown_set_selected( ui_uiDropdownMouseButton, inputMouseButton );
+}
+
 /* --- LVGL Events --- */
 
 void uiDisplayTabValueChangedCallback( lv_event_t* e ) {
-	char subpxOrderMain[ 16 ];
-	char subpxOrderSub[ 16 ];
-
 	if ( uiIsChecked( ui_uiSwitchScale ) )
 		videoSetScaled( );
 	else
 		videoSetUnscaled( );
 
-	if ( uiIsChecked( ui_uiSwitchInvert ) )
-		videoIsInverted = 1;
-	else
-		videoIsInverted = 0;
+	videoIsInverted = uiIsChecked( ui_uiSwitchInvert ) ? 1 : 0;
+	videoIsSubpixel = uiIsChecked( ui_uiSwitchSubpixelMode ) ? 1 : 0;
+	
+	videoSubpixelMain = lv_dropdown_get_selected( ui_uiDropdownSubpxTop );
+	videoSubpixelSub = lv_dropdown_get_selected( ui_uiDropdownSubpxBottom );
 
-	if ( uiIsChecked( ui_uiSwitchSubpixelMode ) )
-		videoIsSubpixel = 1;
-	else
-		videoIsSubpixel = 0;
-
-	uiGetDropdownselected( ui_uiDropdownSubpxTop, subpxOrderMain, sizeof( subpxOrderMain ) );
-	uiGetDropdownselected( ui_uiDropdownSubpxBottom, subpxOrderSub, sizeof( subpxOrderSub ) );
-
-	if ( strcmp( subpxOrderMain, "RGB" ) == 0 )
-		videoSubpixelMain = SUBPIXEL_ORDER_RGB;
-	else
-		videoSubpixelMain = SUBPIXEL_ORDER_BGR;
-
-	if ( strcmp( subpxOrderSub, "RGB" ) == 0 )
-		videoSubpixelSub = SUBPIXEL_ORDER_RGB;
-	else
-		videoSubpixelSub = SUBPIXEL_ORDER_BGR;
+	renderNeedsRefresh = 1;
 }
 
 void uiCallbackEmulatorReset( lv_event_t* e ) {
@@ -1351,19 +1517,93 @@ void uiCallbackEmulatorExit( lv_event_t* e ) {
 }
 
 void uiEmulatorTabValueChangedCallback( lv_event_t* e ) {
-	char emuSpeedStr[ 16 ];
+#ifdef MySoundEnabled
 
-	if ( uiIsChecked( ui_uiSwitchSound ) )
-		HaveSoundOut = trueblnr;
-	else
-		HaveSoundOut = falseblnr;
+	if ( wasInitOK ) {
+		if ( uiIsChecked( ui_uiSwitchSound ) )
+			HaveSoundOut = trueblnr;
+		else
+			HaveSoundOut = falseblnr;
+#endif
 
-	uiGetDropdownselected( ui_uiDropdownEmuSpeed, emuSpeedStr, sizeof( emuSpeedStr ) );
+		speedSetting = lv_dropdown_get_selected( ui_uiDropdownEmuSpeed );
 
-	// if ( strcmp( emuSpeedStr, "1x" ) == 0 )
-	// 	SetSpeedValue( 0 );
-	// else
-	// 	SetSpeedValue( -1 );
+		switch ( speedSetting ) {
+			case UI_SEL_EMULATOR_SPEED_1X:
+				SetSpeedValue( 0 );
+				break;
+			case UI_SEL_EMULATOR_SPEED_2X:
+				SetSpeedValue( 1 );
+				break;
+			case UI_SEL_EMULATOR_SPEED_UNLIMITED:
+				SetSpeedValue( -1 );
+				break;
+			default:
+				speedSetting = UI_SEL_EMULATOR_SPEED_1X;
+				SetSpeedValue( 0 );
+				break;
+		};
+	}
+}
+
+void uiKeyboardInsertCallback( lv_event_t* e ) {
+	// Do nothing if we're already spitting out text
+	if ( keyboardEventCount == 0 )
+		keyboardMacKeyFromString( lv_textarea_get_text( ui_uiKeyboardTextArea ) );
+}
+
+void uiKeyboardBKSPCallback( lv_event_t* e ) {
+	if ( keyboardEventCount == 0 )
+		keyboardAddKeyEvent( MKC_BackSpace, 0 );
+}
+
+void uiKeyboardCommandCallback( lv_event_t* e ) {
+	Keyboard_UpdateKeyMap2( MKC_Command, ( uiIsChecked( ui_uiCommandCheckbox ) ) ? trueblnr : falseblnr );
+}
+
+void uiKeyboardOptionCallback( lv_event_t* e ) {
+	Keyboard_UpdateKeyMap2( MKC_Option, ( uiIsChecked( ui_uiOptionCheckbox ) ) ? trueblnr : falseblnr );
+}
+
+void uiMouseTabValueChangedCallback( lv_event_t* e ) {
+	inputMouseMode = lv_dropdown_get_selected( ui_uiDropdownMouseMode );
+	inputMouseAcceleration = lv_slider_get_value( ui_uiSliderAcceleration );
+
+	switch ( lv_dropdown_get_selected( ui_uiDropdownMouseButton ) ) {
+    	case UI_SEL_MOUSE_BUTTON_LEFT:
+			inputMouseButtonBit = KEY_LEFT;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_RIGHT:
+			inputMouseButtonBit = KEY_RIGHT;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_UP:
+			inputMouseButtonBit = KEY_UP;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_DOWN:
+			inputMouseButtonBit = KEY_DOWN;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_A:
+			inputMouseButtonBit = KEY_A;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_B:
+			inputMouseButtonBit = KEY_B;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_X:
+			inputMouseButtonBit = KEY_X;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_Y:
+			inputMouseButtonBit = KEY_Y;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_L:
+			inputMouseButtonBit = KEY_L;
+			break;
+    	case UI_SEL_MOUSE_BUTTON_R:
+			inputMouseButtonBit = KEY_R;
+			break;
+		default:
+			inputMouseButtonBit = 0;
+			break;
+	};
 }
 
 #include "SCRNEMDV.h"
@@ -1383,7 +1623,10 @@ LOCALFUNC void videoVBlankIRQ( void ) {
 
     videoCopyFBTexture( );
 
-    ( *renderFunc ) ( videoScrollX, videoScrollY );
+	if ( renderNeedsRefresh == 1 )
+    	( *renderFunc ) ( );
+
+	renderNeedsRefresh = 0;
     vblankCount++;
 
 	while ( dmaBusy( 3 ) )
@@ -1482,13 +1725,6 @@ LOCALFUNC blnr MyMoveMouse(si4b h, si4b v)
 	}
 #endif
 
-#if EnableMagnify
-	if (UseMagnify) {
-		h *= MyWindowScale;
-		v *= MyWindowScale;
-	}
-#endif
-
 	return trueblnr;
 }
 #endif
@@ -1563,17 +1799,6 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 LOCALPROC MousePositionNotifyRelative(int deltah, int deltav)
 {
 	blnr ShouldHaveCursorHidden = trueblnr;
-
-#if EnableMagnify
-	if (UseMagnify) {
-		/*
-			This is not really right. If only move one pixel
-			each time, emulated mouse doesn't move at all.
-		*/
-		deltah /= MyWindowScale;
-		deltav /= MyWindowScale;
-	}
-#endif
 
 	MyMousePositionSetDelta(deltah,
 		deltav);
@@ -2065,8 +2290,6 @@ label_retry:
 	}
 
 	if (0 == len) {
-		BG_PALETTE_SUB[ 0 ] = RGB15( 0, 31, 0 );
-
 		/* done */
 
 		if (FilledSoundBuffs < *datp->fMinFilledSoundBuffs) {
@@ -2077,15 +2300,11 @@ label_retry:
 #if dbglog_SoundStuff
 		dbglog_writeln("under run");
 #endif
-		BG_PALETTE_SUB[ 0 ] = RGB15( 31, 0, 0 );
-
 		for (i = 0; i < len; ++i) {
 			*dst++ = ConvertTempSoundSampleToNative(v1);
 		}
 		*datp->fMinFilledSoundBuffs = 0;
 	} else {
-		BG_PALETTE_SUB[ 0 ] = RGB15( 0, 0, 31 );
-
 		ui4b PlayBuffContig = kAllBuffLen
 			- (CurPlayOffset & kAllBuffMask);
 		tpSoundSamp p = CurSoundBuffer
@@ -2217,7 +2436,7 @@ LOCALFUNC blnr MySound_Init(void)
 	cur_audio.wantplaying = falseblnr;
 
 	HaveSoundOut = trueblnr;
-	//lv_obj_add_state( ui_uiSwitchSound, LV_STATE_CHECKED );
+	lv_obj_add_state( ui_uiSwitchSound, LV_STATE_CHECKED );
 
 	assert( mmInit( &mmDS ) == true );
 	mmStreamOpen( &mmStream );
@@ -3687,39 +3906,142 @@ LOCALPROC WaitForTheNextEvent(void)
 		Keyboard_UpdateKeyMap2( mackey, falseblnr ); \
 } while ( 0 )
 
-LOCALPROC CheckForSystemEvents(void) {
-	static const int fxDSScreenHeight = inttof32( SCREEN_HEIGHT );
+LOCALPROC inputMouseMove_DPAD( void ) {
+	int dx = 0;
+	int dy = 0;
+
+	dx = ( inputKeysHeld & KEY_LEFT ) ? -1 : dx;
+	dx = ( inputKeysHeld & KEY_RIGHT ) ? 1 : dx;
+
+	dy = ( inputKeysHeld & KEY_UP ) ? -1 : dy;
+	dy = ( inputKeysHeld & KEY_DOWN ) ? 1 : dy;
+
+	MousePositionNotifyRelative( 
+		dx * inputMouseAcceleration,
+		dy * inputMouseAcceleration
+	);
+}
+
+LOCALPROC inputMouseMove_ABXY( void ) {
+	int dx = 0;
+	int dy = 0;
+
+	dx = ( inputKeysHeld & KEY_Y ) ? -1 : dx;
+	dx = ( inputKeysHeld & KEY_A ) ? 1 : dx;
+
+	dy = ( inputKeysHeld & KEY_X ) ? -1 : dy;
+	dy = ( inputKeysHeld & KEY_B ) ? 1 : dy;
+
+	MousePositionNotifyRelative( 
+		dx * inputMouseAcceleration,
+		dy * inputMouseAcceleration
+	);
+}
+
+LOCALPROC inputMouseMove_Scaled( void ) {
 	static const int fxMacScreenHeight = inttof32( vMacScreenHeight );
-	static uint32_t nextLVGLTick = 0;
-	uint32_t tickNow = 0;
-	int lastMouseX = 0;
-	int lastMouseY = 0;
+	static const int fxDSScreenHeight = inttof32( SCREEN_HEIGHT );
 	int mouseX = 0;
 	int mouseY = 0;
 
+	if ( inputKeysHeld & KEY_TOUCH && ! videoUIHasFocus( ) ) {
+		mouseX = inputTouchPos.px << 1;
+		mouseY = inttof32( inputTouchPos.py );
+
+		mouseY = divf32( mouseY, fxDSScreenHeight );
+		mouseY = mulf32( mouseY, fxMacScreenHeight );
+
+		MousePositionNotify( mouseX, f32toint( mouseY ) );
+	}
+}
+
+LOCALPROC inputMouseMove_Trackpad( void ) {
+	static int lastTouchX = 0;
+	static int lastTouchY = 0;
+	int dx = 0;
+	int dy = 0;
+
+	if ( ! videoUIHasFocus( ) ) {
+		if ( inputKeysDown & KEY_TOUCH ) {
+			lastTouchX = inputTouchPos.px;
+			lastTouchY = inputTouchPos.py;
+		}
+
+		if ( inputKeysHeld & KEY_TOUCH ) {
+			dx = inputTouchPos.px - lastTouchX;
+			dy = inputTouchPos.py - lastTouchY;
+
+			MousePositionNotifyRelative( 
+				dx * inputMouseAcceleration, 
+				dy * inputMouseAcceleration
+			);
+
+			lastTouchX = inputTouchPos.px;
+			lastTouchY = inputTouchPos.py;
+		}
+
+		if ( inputKeysUp & KEY_TOUCH ) {
+			dx = 0;
+			dy = 0;
+		}
+	}
+}
+
+LOCALPROC CheckForSystemEvents(void) {
+	static uint32_t nextLVGLTick = 0;
+	static uint32_t nextInputScan = 0;
+	KeyboardEvent* theEvent = NULL;
+
+	uint32_t tickNow = 0;
+	uint16_t lastMouseX = 0;
+	uint16_t lastMouseY = 0;
+
 	tickNow = systemGetTicks( );
+
+	if ( keyboardEventCount ) {
+		theEvent = &keyboardEvents[ keyboardEventPos++ ];
+
+		Keyboard_UpdateKeyMap2( theEvent->macKey, theEvent->down );
+
+		if ( keyboardEventPos >= keyboardEventCount ) {
+			keyboardEventPos = 0;
+			keyboardEventCount = 0;
+		}
+	}
+
 	scanKeys( );
 
 	inputKeysDown = keysDown( );
 	inputKeysHeld = keysHeld( );
 	inputKeysUp = keysUp( );
 
-	touchRead( &touchPos );
+	if ( ( inputKeysDown & KEY_TOUCH ) || ( inputKeysHeld & KEY_TOUCH ) )
+		touchRead( &inputTouchPos );
 
 	if ( tickNow >= nextLVGLTick && videoUIHasFocus( ) ) {
 		lv_timer_handler( );
 		nextLVGLTick = tickNow + 50;
 	}
 
-	if ( ( inputKeysHeld & KEY_TOUCH ) && ! videoUIHasFocus( ) ) {
-		mouseX = touchPos.px << 1;
-		mouseY = inttof32( touchPos.py );
+	if ( inputKeysHeld ) {
+		switch ( inputMouseMode ) {
+			case UI_SEL_MOUSE_MODE_DPAD:
+				inputMouseMove_DPAD( );
+				break;
+			case UI_SEL_MOUSE_MODE_ABXY:
+				inputMouseMove_ABXY( );
+				break;
+			case UI_SEL_MOUSE_MODE_SCALED:
+				inputMouseMove_Scaled( );
+				break;
+			case UI_SEL_MOUSE_MODE_TRACKPAD: 
+				inputMouseMove_Trackpad( );
+			default:
+				break;
+		};
+	}
 
-		mouseY = divf32( mouseY, fxDSScreenHeight );
-		mouseY = mulf32( mouseY, fxMacScreenHeight );
-
-		MousePositionNotify( mouseX, f32toint( mouseY ) );
-
+	if ( ( CurMouseH != lastMouseX ) || ( CurMouseV != lastMouseY ) ) {
 		videoScrollX = CurMouseH - ( SCREEN_WIDTH / 2 );
 		videoScrollY = CurMouseV - ( SCREEN_HEIGHT / 2 );
 
@@ -3732,18 +4054,10 @@ LOCALPROC CheckForSystemEvents(void) {
 		renderNeedsRefresh = 1;
 	}
 
-	HandleDSToMacKey( KEY_LEFT, MKC_Left );
-	HandleDSToMacKey( KEY_RIGHT, MKC_Right );
-	HandleDSToMacKey( KEY_UP, MKC_Up );
-	HandleDSToMacKey( KEY_DOWN, MKC_Down );
-
-	HandleDSToMacKey( KEY_A, MKC_Return );
-	HandleDSToMacKey( KEY_X, MKC_Escape );
-
-	if ( ( inputKeysDown & KEY_L ) || ( inputKeysDown & KEY_R ) )
+	if ( inputKeysDown & inputMouseButtonBit )
 		MyMouseButtonSet( trueblnr );
 
-	if ( ( inputKeysUp & KEY_L ) || ( inputKeysUp & KEY_R ) )
+	if ( inputKeysUp & inputMouseButtonBit )
 		MyMouseButtonSet( falseblnr );	
 
 	if ( inputKeysUp & KEY_START ) {
@@ -3758,6 +4072,9 @@ LOCALPROC CheckForSystemEvents(void) {
 	if ( inputKeysUp & KEY_SELECT ) {
 		videoSwapScreens( );
 	}
+
+	lastMouseX = CurMouseH;
+	lastMouseY = CurMouseV;
 }
 
 /*

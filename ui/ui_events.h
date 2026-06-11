@@ -14,6 +14,11 @@ void uiDisplayTabValueChangedCallback(lv_event_t * e);
 void uiEmulatorTabValueChangedCallback(lv_event_t * e);
 void uiCallbackEmulatorReset(lv_event_t * e);
 void uiCallbackEmulatorExit(lv_event_t * e);
+void uiMouseTabValueChangedCallback(lv_event_t * e);
+void uiKeyboardInsertCallback(lv_event_t * e);
+void uiKeyboardBKSPCallback(lv_event_t * e);
+void uiKeyboardCommandCallback(lv_event_t * e);
+void uiKeyboardOptionCallback(lv_event_t * e);
 
 #ifdef __cplusplus
 } /*extern "C"*/

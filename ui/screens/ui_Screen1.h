@@ -44,6 +44,27 @@ extern lv_obj_t *ui_Label11;
 extern void ui_event_uiButtonExit( lv_event_t * e);
 extern lv_obj_t *ui_uiButtonExit;
 extern lv_obj_t *ui_Label6;
+extern lv_obj_t *ui_uiTabPageMouse;
+extern lv_obj_t *ui_Label7;
+extern void ui_event_uiDropdownMouseMode( lv_event_t * e);
+extern lv_obj_t *ui_uiDropdownMouseMode;
+extern lv_obj_t *ui_Label5;
+extern void ui_event_uiSliderAcceleration( lv_event_t * e);
+extern lv_obj_t *ui_uiSliderAcceleration;
+extern lv_obj_t *ui_Label8;
+extern void ui_event_uiDropdownMouseButton( lv_event_t * e);
+extern lv_obj_t *ui_uiDropdownMouseButton;
+extern lv_obj_t *ui_uiTabPageKeyboard;
+extern lv_obj_t *ui_uiKeyboardTextArea;
+extern void ui_event_uiKeyboardKeyboard( lv_event_t * e);
+extern lv_obj_t *ui_uiKeyboardKeyboard;
+extern void ui_event_uiBackspaceButton( lv_event_t * e);
+extern lv_obj_t *ui_uiBackspaceButton;
+extern lv_obj_t *ui_Label12;
+extern void ui_event_uiCommandCheckbox( lv_event_t * e);
+extern lv_obj_t *ui_uiCommandCheckbox;
+extern void ui_event_uiOptionCheckbox( lv_event_t * e);
+extern lv_obj_t *ui_uiOptionCheckbox;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

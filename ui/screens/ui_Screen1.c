@@ -5,7 +5,7 @@
 
 #include "../ui.h"
 
-lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;
+lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
 // event funtions
 void ui_event_uiSwitchSubpixelMode( lv_event_t * e) {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -76,6 +76,62 @@ void ui_event_uiButtonExit( lv_event_t * e) {
 
 if ( event_code == LV_EVENT_CLICKED) {
       uiCallbackEmulatorExit( e );
+}
+}
+
+void ui_event_uiDropdownMouseMode( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiMouseTabValueChangedCallback( e );
+}
+}
+
+void ui_event_uiSliderAcceleration( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiMouseTabValueChangedCallback( e );
+}
+}
+
+void ui_event_uiDropdownMouseButton( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiMouseTabValueChangedCallback( e );
+}
+}
+
+void ui_event_uiKeyboardKeyboard( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_READY) {
+      uiKeyboardInsertCallback( e );
+}
+}
+
+void ui_event_uiBackspaceButton( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_CLICKED) {
+      uiKeyboardBKSPCallback( e );
+}
+}
+
+void ui_event_uiCommandCheckbox( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiKeyboardCommandCallback( e );
+}
+}
+
+void ui_event_uiOptionCheckbox( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiKeyboardOptionCallback( e );
 }
 }
 
@@ -197,7 +253,7 @@ lv_label_set_text(ui_Label9,"Emulation speed");
 lv_obj_set_style_text_font(ui_Label9, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_uiDropdownEmuSpeed = lv_dropdown_create(ui_uiTabPageEmulator);
-lv_dropdown_set_options( ui_uiDropdownEmuSpeed, "No limit\n1x" );
+lv_dropdown_set_options( ui_uiDropdownEmuSpeed, "1x\n2x\nUnlimited" );
 lv_obj_set_width( ui_uiDropdownEmuSpeed, 96);
 lv_obj_set_height( ui_uiDropdownEmuSpeed, 16);
 lv_obj_set_x( ui_uiDropdownEmuSpeed, -5 );
@@ -249,6 +305,122 @@ lv_obj_set_align( ui_Label6, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Label6,"Exit");
 lv_obj_set_style_text_font(ui_Label6, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
 
+ui_uiTabPageMouse = lv_tabview_add_tab(ui_TabView1, "Mouse");
+lv_obj_set_flex_flow(ui_uiTabPageMouse,LV_FLEX_FLOW_ROW_WRAP);
+lv_obj_set_flex_align(ui_uiTabPageMouse, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+
+ui_Label7 = lv_label_create(ui_uiTabPageMouse);
+lv_obj_set_width( ui_Label7, lv_pct(50));
+lv_obj_set_height( ui_Label7, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Label7, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Label7,"Mouse mode");
+lv_obj_set_style_text_font(ui_Label7, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_uiDropdownMouseMode = lv_dropdown_create(ui_uiTabPageMouse);
+lv_dropdown_set_options( ui_uiDropdownMouseMode, "Scaled\nTrackpad\nDPAD\nABXY" );
+lv_obj_set_width( ui_uiDropdownMouseMode, 96);
+lv_obj_set_height( ui_uiDropdownMouseMode, 16);
+lv_obj_set_x( ui_uiDropdownMouseMode, -5 );
+lv_obj_set_y( ui_uiDropdownMouseMode, -80 );
+lv_obj_set_align( ui_uiDropdownMouseMode, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiDropdownMouseMode, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_set_style_text_font(ui_uiDropdownMouseMode, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+lv_obj_set_style_text_font(lv_dropdown_get_list(ui_uiDropdownMouseMode), &lv_font_montserrat_10,  LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_Label5 = lv_label_create(ui_uiTabPageMouse);
+lv_obj_set_width( ui_Label5, lv_pct(50));
+lv_obj_set_height( ui_Label5, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Label5, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Label5,"Mouse acceleration");
+lv_obj_set_style_text_font(ui_Label5, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_uiSliderAcceleration = lv_slider_create(ui_uiTabPageMouse);
+lv_slider_set_range(ui_uiSliderAcceleration, 1,5);
+lv_slider_set_value( ui_uiSliderAcceleration, 3, LV_ANIM_OFF);
+if (lv_slider_get_mode(ui_uiSliderAcceleration)==LV_SLIDER_MODE_RANGE ) lv_slider_set_start_value( ui_uiSliderAcceleration, 1, LV_ANIM_OFF);
+lv_obj_set_height( ui_uiSliderAcceleration, 10);
+lv_obj_set_width( ui_uiSliderAcceleration, lv_pct(44));
+lv_obj_set_x( ui_uiSliderAcceleration, 39 );
+lv_obj_set_y( ui_uiSliderAcceleration, 3 );
+lv_obj_set_align( ui_uiSliderAcceleration, LV_ALIGN_CENTER );
+
+//Compensating for LVGL9.1 draw crash with bar/slider max value when top-padding is nonzero and right-padding is 0
+if (lv_obj_get_style_pad_top(ui_uiSliderAcceleration,LV_PART_MAIN) > 0) lv_obj_set_style_pad_right( ui_uiSliderAcceleration, lv_obj_get_style_pad_right(ui_uiSliderAcceleration,LV_PART_MAIN) + 1, LV_PART_MAIN );
+ui_Label8 = lv_label_create(ui_uiTabPageMouse);
+lv_obj_set_width( ui_Label8, lv_pct(50));
+lv_obj_set_height( ui_Label8, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Label8, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Label8,"Mouse button");
+lv_obj_set_style_text_font(ui_Label8, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_uiDropdownMouseButton = lv_dropdown_create(ui_uiTabPageMouse);
+lv_dropdown_set_options( ui_uiDropdownMouseButton, "Left\nRight\nUp\nDown\nA\nB\nX\nY\nL\nR" );
+lv_obj_set_width( ui_uiDropdownMouseButton, 96);
+lv_obj_set_height( ui_uiDropdownMouseButton, 16);
+lv_obj_set_x( ui_uiDropdownMouseButton, -5 );
+lv_obj_set_y( ui_uiDropdownMouseButton, -80 );
+lv_obj_set_align( ui_uiDropdownMouseButton, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiDropdownMouseButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_set_style_text_font(ui_uiDropdownMouseButton, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+lv_obj_set_style_text_font(lv_dropdown_get_list(ui_uiDropdownMouseButton), &lv_font_montserrat_10,  LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_uiTabPageKeyboard = lv_tabview_add_tab(ui_TabView1, "Keyboard");
+lv_obj_set_flex_flow(ui_uiTabPageKeyboard,LV_FLEX_FLOW_ROW_WRAP);
+lv_obj_set_flex_align(ui_uiTabPageKeyboard, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+lv_obj_remove_flag( ui_uiTabPageKeyboard, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+
+ui_uiKeyboardTextArea = lv_textarea_create(ui_uiTabPageKeyboard);
+lv_obj_set_width( ui_uiKeyboardTextArea, lv_pct(100));
+lv_obj_set_height( ui_uiKeyboardTextArea, LV_SIZE_CONTENT);   /// 20
+lv_obj_set_x( ui_uiKeyboardTextArea, -76 );
+lv_obj_set_y( ui_uiKeyboardTextArea, -28 );
+lv_obj_set_style_text_align( ui_uiKeyboardTextArea, LV_ALIGN_CENTER, 0);
+lv_textarea_set_max_length(ui_uiKeyboardTextArea,128);
+lv_textarea_set_placeholder_text(ui_uiKeyboardTextArea,"Enter text to send to Macintosh");
+lv_textarea_set_one_line(ui_uiKeyboardTextArea,true);
+
+lv_obj_set_style_text_font(ui_uiKeyboardTextArea, &lv_font_montserrat_10, LV_PART_TEXTAREA_PLACEHOLDER| LV_STATE_DEFAULT);
+
+ui_uiKeyboardKeyboard = lv_keyboard_create(ui_uiTabPageKeyboard);
+lv_obj_set_height( ui_uiKeyboardKeyboard, 70);
+lv_obj_set_width( ui_uiKeyboardKeyboard, lv_pct(100));
+lv_obj_set_x( ui_uiKeyboardKeyboard, -31 );
+lv_obj_set_y( ui_uiKeyboardKeyboard, 38 );
+lv_obj_set_align( ui_uiKeyboardKeyboard, LV_ALIGN_CENTER );
+
+lv_obj_set_style_text_font(ui_uiKeyboardKeyboard, &lv_font_montserrat_10, LV_PART_ITEMS| LV_STATE_DEFAULT);
+
+ui_uiBackspaceButton = lv_button_create(ui_uiTabPageKeyboard);
+lv_obj_set_width( ui_uiBackspaceButton, 64);
+lv_obj_set_height( ui_uiBackspaceButton, 16);
+lv_obj_set_align( ui_uiBackspaceButton, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiBackspaceButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_remove_flag( ui_uiBackspaceButton, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+
+ui_Label12 = lv_label_create(ui_uiBackspaceButton);
+lv_obj_set_width( ui_Label12, LV_SIZE_CONTENT);  /// 1
+lv_obj_set_height( ui_Label12, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Label12, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Label12,"BKSP");
+
+ui_uiCommandCheckbox = lv_checkbox_create(ui_uiTabPageKeyboard);
+lv_checkbox_set_text(ui_uiCommandCheckbox,"Command");
+lv_obj_set_width( ui_uiCommandCheckbox, LV_SIZE_CONTENT);  /// 1
+lv_obj_set_height( ui_uiCommandCheckbox, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_uiCommandCheckbox, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiCommandCheckbox, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_set_style_text_font(ui_uiCommandCheckbox, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_uiOptionCheckbox = lv_checkbox_create(ui_uiTabPageKeyboard);
+lv_checkbox_set_text(ui_uiOptionCheckbox,"Option");
+lv_obj_set_width( ui_uiOptionCheckbox, LV_SIZE_CONTENT);  /// 1
+lv_obj_set_height( ui_uiOptionCheckbox, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_uiOptionCheckbox, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiOptionCheckbox, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_set_style_text_font(ui_uiOptionCheckbox, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
+
 lv_obj_add_event_cb(ui_uiSwitchSubpixelMode, ui_event_uiSwitchSubpixelMode, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiDropdownSubpxTop, ui_event_uiDropdownSubpxTop, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiDropdownSubpxBottom, ui_event_uiDropdownSubpxBottom, LV_EVENT_ALL, NULL);
@@ -258,6 +430,14 @@ lv_obj_add_event_cb(ui_uiDropdownEmuSpeed, ui_event_uiDropdownEmuSpeed, LV_EVENT
 lv_obj_add_event_cb(ui_uiSwitchSound, ui_event_uiSwitchSound, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiButtonReset, ui_event_uiButtonReset, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiButtonExit, ui_event_uiButtonExit, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiDropdownMouseMode, ui_event_uiDropdownMouseMode, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiSliderAcceleration, ui_event_uiSliderAcceleration, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiDropdownMouseButton, ui_event_uiDropdownMouseButton, LV_EVENT_ALL, NULL);
+lv_keyboard_set_textarea(ui_uiKeyboardKeyboard,ui_uiKeyboardTextArea);
+lv_obj_add_event_cb(ui_uiKeyboardKeyboard, ui_event_uiKeyboardKeyboard, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiBackspaceButton, ui_event_uiBackspaceButton, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiCommandCheckbox, ui_event_uiCommandCheckbox, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiOptionCheckbox, ui_event_uiOptionCheckbox, LV_EVENT_ALL, NULL);
 
 }
 
@@ -288,5 +468,19 @@ ui_uiButtonReset= NULL;
 ui_Label11= NULL;
 ui_uiButtonExit= NULL;
 ui_Label6= NULL;
+ui_uiTabPageMouse= NULL;
+ui_Label7= NULL;
+ui_uiDropdownMouseMode= NULL;
+ui_Label5= NULL;
+ui_uiSliderAcceleration= NULL;
+ui_Label8= NULL;
+ui_uiDropdownMouseButton= NULL;
+ui_uiTabPageKeyboard= NULL;
+ui_uiKeyboardTextArea= NULL;
+ui_uiKeyboardKeyboard= NULL;
+ui_uiBackspaceButton= NULL;
+ui_Label12= NULL;
+ui_uiCommandCheckbox= NULL;
+ui_uiOptionCheckbox= NULL;
 
 }
