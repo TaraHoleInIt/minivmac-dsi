@@ -5,7 +5,7 @@
 
 #include "../ui.h"
 
-lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
+lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiEscapeButton = NULL;lv_obj_t *ui_Label13 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
 // event funtions
 void ui_event_uiSwitchSubpixelMode( lv_event_t * e) {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -116,6 +116,14 @@ void ui_event_uiBackspaceButton( lv_event_t * e) {
 
 if ( event_code == LV_EVENT_CLICKED) {
       uiKeyboardBKSPCallback( e );
+}
+}
+
+void ui_event_uiEscapeButton( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_CLICKED) {
+      uiKeyboardESCCallback( e );
 }
 }
 
@@ -393,20 +401,33 @@ lv_obj_set_align( ui_uiKeyboardKeyboard, LV_ALIGN_CENTER );
 lv_obj_set_style_text_font(ui_uiKeyboardKeyboard, &lv_font_montserrat_10, LV_PART_ITEMS| LV_STATE_DEFAULT);
 
 ui_uiBackspaceButton = lv_button_create(ui_uiTabPageKeyboard);
-lv_obj_set_width( ui_uiBackspaceButton, 64);
 lv_obj_set_height( ui_uiBackspaceButton, 16);
+lv_obj_set_width( ui_uiBackspaceButton, LV_SIZE_CONTENT);  /// 64
 lv_obj_set_align( ui_uiBackspaceButton, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_uiBackspaceButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
 lv_obj_remove_flag( ui_uiBackspaceButton, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 ui_Label12 = lv_label_create(ui_uiBackspaceButton);
-lv_obj_set_width( ui_Label12, LV_SIZE_CONTENT);  /// 1
+lv_obj_set_width( ui_Label12, 28);
 lv_obj_set_height( ui_Label12, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Label12, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Label12,"BKSP");
 
+ui_uiEscapeButton = lv_button_create(ui_uiTabPageKeyboard);
+lv_obj_set_width( ui_uiEscapeButton, 32);
+lv_obj_set_height( ui_uiEscapeButton, 16);
+lv_obj_set_align( ui_uiEscapeButton, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiEscapeButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_remove_flag( ui_uiEscapeButton, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+
+ui_Label13 = lv_label_create(ui_uiEscapeButton);
+lv_obj_set_width( ui_Label13, LV_SIZE_CONTENT);  /// 1
+lv_obj_set_height( ui_Label13, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Label13, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Label13,"ESC");
+
 ui_uiCommandCheckbox = lv_checkbox_create(ui_uiTabPageKeyboard);
-lv_checkbox_set_text(ui_uiCommandCheckbox,"Command");
+lv_checkbox_set_text(ui_uiCommandCheckbox,"CMD");
 lv_obj_set_width( ui_uiCommandCheckbox, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_uiCommandCheckbox, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_uiCommandCheckbox, LV_ALIGN_CENTER );
@@ -414,7 +435,7 @@ lv_obj_add_flag( ui_uiCommandCheckbox, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flag
 lv_obj_set_style_text_font(ui_uiCommandCheckbox, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_uiOptionCheckbox = lv_checkbox_create(ui_uiTabPageKeyboard);
-lv_checkbox_set_text(ui_uiOptionCheckbox,"Option");
+lv_checkbox_set_text(ui_uiOptionCheckbox,"OPT");
 lv_obj_set_width( ui_uiOptionCheckbox, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_uiOptionCheckbox, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_uiOptionCheckbox, LV_ALIGN_CENTER );
@@ -436,6 +457,7 @@ lv_obj_add_event_cb(ui_uiDropdownMouseButton, ui_event_uiDropdownMouseButton, LV
 lv_keyboard_set_textarea(ui_uiKeyboardKeyboard,ui_uiKeyboardTextArea);
 lv_obj_add_event_cb(ui_uiKeyboardKeyboard, ui_event_uiKeyboardKeyboard, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiBackspaceButton, ui_event_uiBackspaceButton, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiEscapeButton, ui_event_uiEscapeButton, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiCommandCheckbox, ui_event_uiCommandCheckbox, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiOptionCheckbox, ui_event_uiOptionCheckbox, LV_EVENT_ALL, NULL);
 
@@ -480,6 +502,8 @@ ui_uiKeyboardTextArea= NULL;
 ui_uiKeyboardKeyboard= NULL;
 ui_uiBackspaceButton= NULL;
 ui_Label12= NULL;
+ui_uiEscapeButton= NULL;
+ui_Label13= NULL;
 ui_uiCommandCheckbox= NULL;
 ui_uiOptionCheckbox= NULL;
 

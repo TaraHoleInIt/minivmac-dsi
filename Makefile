@@ -13,7 +13,7 @@ ARM_NONE_EABI_PATH	?= $(WONDERFUL_TOOLCHAIN)/toolchain/gcc-arm-none-eabi/bin/
 
 NAME		:= Mini_vMac
 
-GAME_TITLE	:= Mini vMac 37 Beta ($VARIANT)
+GAME_TITLE	:= Mini vMac $(VARIANT)
 GAME_SUBTITLE	:= Built with BlocksDS
 GAME_AUTHOR	:= TarableCode
 GAME_ICON	:= icon.gif

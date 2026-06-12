@@ -16,7 +16,7 @@
 #define Use68020 0
 #define EmFPU 0
 #define EmMMU 0
-#define EmClassicSnd 1
+#define EmClassicSnd 0
 #define EmASC 0
 
 #define CurEmMd kEmMd_Plus
@@ -29,7 +29,7 @@
 #define kAutoSlowSubTicks 16384
 #define kAutoSlowTime 34
 
-#define kRAMa_Size 0x00080000
+#define kRAMa_Size 0x00200000
 #define kRAMb_Size 0x00080000
 
 #define IncludeVidMem 0
@@ -45,7 +45,7 @@
 #define Sony_WantChecksumsUpdated 0
 #define Sony_VerifyChecksums 0
 #define CaretBlinkTime 0x03
-#define SpeakerVol 0x05
+#define SpeakerVol 0x00
 #define DoubleClickTime 0x05
 #define MenuBlink 0x03
 #define AutoKeyThresh 0x06

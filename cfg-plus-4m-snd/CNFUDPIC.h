@@ -45,7 +45,7 @@
 #define Sony_WantChecksumsUpdated 0
 #define Sony_VerifyChecksums 0
 #define CaretBlinkTime 0x03
-#define SpeakerVol 0x00
+#define SpeakerVol 0x05
 #define DoubleClickTime 0x05
 #define MenuBlink 0x03
 #define AutoKeyThresh 0x06

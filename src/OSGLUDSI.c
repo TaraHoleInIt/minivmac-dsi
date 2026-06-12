@@ -875,7 +875,7 @@ LOCALFUNC void videoWriteMessage( const char* text ) {
 LOCALFUNC void videoInit( void ) {
     videoCalcStrips( );
 
-    videoSetMode( MODE_2_3D );
+    videoSetMode( MODE_0_3D );
 	videoSetModeSub( MODE_5_2D );
 
     vramSetBankA( VRAM_A_TEXTURE );
@@ -883,7 +883,7 @@ LOCALFUNC void videoInit( void ) {
 	vramSetBankC( VRAM_C_SUB_BG );
     vramSetBankE( VRAM_E_TEX_PALETTE );
 
-	vramSetBankD( VRAM_D_MAIN_BG );
+	vramSetBankD( VRAM_D_MAIN_BG_0x06000000 );
 
     glInit( );
     glEnable( GL_TEXTURE_2D );
@@ -901,15 +901,13 @@ LOCALFUNC void videoInit( void ) {
     videoSetUnscaled( );
 
 	consoleInit( &videoMacMsgConsole, 1, BgType_Text4bpp, BgSize_T_256x256, 0, 1, true, true );
-	videoMacMsgBG = bgInit( 1, BgType_Text4bpp, BgSize_T_256x256, 0, 1 );
+	videoMacMsgBG = bgInitHidden( 1, BgType_Text4bpp, BgSize_T_256x256, 0, 1 );
 
-	bgSetPriority( 0, 3 );
-	bgSetPriority( 1, 0 );
+	REG_BG0CNT |= BG_PRIORITY_3;
+	REG_BG1CNT |= BG_PRIORITY_0;
 
 	consoleSelect( &videoMacMsgConsole );
-	consoleSetColor( &videoMacMsgConsole, CONSOLE_LIGHT_CYAN );
-
-	printf( "hi\n" );
+	consoleSetColor( &videoMacMsgConsole, CONSOLE_LIGHT_RED );
 
 	videoSetupLVGL( );
 
@@ -1489,6 +1487,7 @@ LOCALPROC uiSetupDefaults( void ) {
 	lv_dropdown_set_selected( ui_uiDropdownMouseMode, inputMouseMode );
 	lv_slider_set_value( ui_uiSliderAcceleration, inputMouseAcceleration, LV_ANIM_OFF );
 	lv_dropdown_set_selected( ui_uiDropdownMouseButton, inputMouseButton );
+	lv_dropdown_set_selected( ui_uiDropdownEmuSpeed, UI_SEL_EMULATOR_SPEED_UNLIMITED );
 }
 
 /* --- LVGL Events --- */
@@ -1563,6 +1562,11 @@ void uiKeyboardCommandCallback( lv_event_t* e ) {
 
 void uiKeyboardOptionCallback( lv_event_t* e ) {
 	Keyboard_UpdateKeyMap2( MKC_Option, ( uiIsChecked( ui_uiOptionCheckbox ) ) ? trueblnr : falseblnr );
+}
+
+void uiKeyboardESCCallback( lv_event_t* e ) {
+	if ( keyboardEventCount == 0 )
+		keyboardAddKeyEvent( MKC_Escape, 0 );
 }
 
 void uiMouseTabValueChangedCallback( lv_event_t* e ) {
@@ -4252,6 +4256,8 @@ LOCALFUNC blnr InitFS( void ) {
 		return trueblnr;
 	}
 
+	MacMsg( "No filesystem", "Could not mount a filesystem.", trueblnr );
+
 	return falseblnr;
 }
 
@@ -4333,6 +4339,9 @@ LOCALPROC UnInitOSGLU(void)
 
 int main(int argc, char **argv)
 {
+	uint32_t exitTime = 0;
+	uint32_t timeNow = 0;
+
 	my_argc = argc;
 	my_argv = argv;
 
@@ -4340,7 +4349,15 @@ int main(int argc, char **argv)
 	if (InitOSGLU()) {
 		ProgramMain();
 	}
+
 	UnInitOSGLU();
+
+	if ( videoMacMsgBGOn ) {
+		do {
+			swiWaitForVBlank( );
+			CheckForSystemEvents( );
+		} while ( ! ( inputKeysDown & KEY_START ) );
+	}
 
 	return 0;
 }
