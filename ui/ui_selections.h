@@ -32,4 +32,10 @@ typedef enum {
     UI_SEL_SUBPX_ORDER_BGR
 } UISubpxOrder;
 
+typedef enum {
+    UI_SEL_ARROWK_DPAD = 0,
+    UI_SEL_ARROWK_ABXY,
+    UI_SEL_ARROWK_NONE
+} UIArrowKeys;
+
 #endif

@@ -5,7 +5,7 @@
 
 #include "../ui.h"
 
-lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiEscapeButton = NULL;lv_obj_t *ui_Label13 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
+lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_Label14 = NULL;lv_obj_t *ui_uiDropdownArrowKeyMapping = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiEscapeButton = NULL;lv_obj_t *ui_Label13 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
 // event funtions
 void ui_event_uiSwitchSubpixelMode( lv_event_t * e) {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -103,9 +103,20 @@ if ( event_code == LV_EVENT_VALUE_CHANGED) {
 }
 }
 
+void ui_event_uiDropdownArrowKeyMapping( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiMouseTabValueChangedCallback( e );
+}
+}
+
 void ui_event_uiKeyboardKeyboard( lv_event_t * e) {
     lv_event_code_t event_code = lv_event_get_code(e);
 
+if ( event_code == LV_EVENT_VALUE_CHANGED) {
+      uiKeyboardEnterCallback( e );
+}
 if ( event_code == LV_EVENT_READY) {
       uiKeyboardInsertCallback( e );
 }
@@ -313,7 +324,7 @@ lv_obj_set_align( ui_Label6, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Label6,"Exit");
 lv_obj_set_style_text_font(ui_Label6, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
 
-ui_uiTabPageMouse = lv_tabview_add_tab(ui_TabView1, "Mouse");
+ui_uiTabPageMouse = lv_tabview_add_tab(ui_TabView1, "Input");
 lv_obj_set_flex_flow(ui_uiTabPageMouse,LV_FLEX_FLOW_ROW_WRAP);
 lv_obj_set_flex_align(ui_uiTabPageMouse, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
@@ -373,6 +384,25 @@ lv_obj_add_flag( ui_uiDropdownMouseButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// 
 lv_obj_set_style_text_font(ui_uiDropdownMouseButton, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 lv_obj_set_style_text_font(lv_dropdown_get_list(ui_uiDropdownMouseButton), &lv_font_montserrat_10,  LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_Label14 = lv_label_create(ui_uiTabPageMouse);
+lv_obj_set_width( ui_Label14, lv_pct(50));
+lv_obj_set_height( ui_Label14, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Label14, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Label14,"Arrow key mapping");
+lv_obj_set_style_text_font(ui_Label14, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_uiDropdownArrowKeyMapping = lv_dropdown_create(ui_uiTabPageMouse);
+lv_dropdown_set_options( ui_uiDropdownArrowKeyMapping, "DPAD\nABXY\nNone" );
+lv_obj_set_width( ui_uiDropdownArrowKeyMapping, 96);
+lv_obj_set_height( ui_uiDropdownArrowKeyMapping, 16);
+lv_obj_set_x( ui_uiDropdownArrowKeyMapping, -5 );
+lv_obj_set_y( ui_uiDropdownArrowKeyMapping, -80 );
+lv_obj_set_align( ui_uiDropdownArrowKeyMapping, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_uiDropdownArrowKeyMapping, LV_OBJ_FLAG_SCROLL_ON_FOCUS );   /// Flags
+lv_obj_set_style_text_font(ui_uiDropdownArrowKeyMapping, &lv_font_montserrat_12, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+lv_obj_set_style_text_font(lv_dropdown_get_list(ui_uiDropdownArrowKeyMapping), &lv_font_montserrat_10,  LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_uiTabPageKeyboard = lv_tabview_add_tab(ui_TabView1, "Keyboard");
 lv_obj_set_flex_flow(ui_uiTabPageKeyboard,LV_FLEX_FLOW_ROW_WRAP);
@@ -454,6 +484,7 @@ lv_obj_add_event_cb(ui_uiButtonExit, ui_event_uiButtonExit, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiDropdownMouseMode, ui_event_uiDropdownMouseMode, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiSliderAcceleration, ui_event_uiSliderAcceleration, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiDropdownMouseButton, ui_event_uiDropdownMouseButton, LV_EVENT_ALL, NULL);
+lv_obj_add_event_cb(ui_uiDropdownArrowKeyMapping, ui_event_uiDropdownArrowKeyMapping, LV_EVENT_ALL, NULL);
 lv_keyboard_set_textarea(ui_uiKeyboardKeyboard,ui_uiKeyboardTextArea);
 lv_obj_add_event_cb(ui_uiKeyboardKeyboard, ui_event_uiKeyboardKeyboard, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_uiBackspaceButton, ui_event_uiBackspaceButton, LV_EVENT_ALL, NULL);
@@ -497,6 +528,8 @@ ui_Label5= NULL;
 ui_uiSliderAcceleration= NULL;
 ui_Label8= NULL;
 ui_uiDropdownMouseButton= NULL;
+ui_Label14= NULL;
+ui_uiDropdownArrowKeyMapping= NULL;
 ui_uiTabPageKeyboard= NULL;
 ui_uiKeyboardTextArea= NULL;
 ui_uiKeyboardKeyboard= NULL;

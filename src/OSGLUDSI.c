@@ -647,6 +647,7 @@ static int inputKeysUp = 0;
 
 LOCALVAR UIMouseMode inputMouseMode = UI_SEL_MOUSE_MODE_SCALED;
 LOCALVAR UIMouseButton inputMouseButton = UI_SEL_MOUSE_BUTTON_L;
+LOCALVAR UIArrowKeys inputArrowMapping = UI_SEL_ARROWK_DPAD;
 
 LOCALVAR int inputMouseButtonBit = 0;
 LOCALVAR int inputMouseAcceleration = 2;
@@ -1545,10 +1546,23 @@ void uiEmulatorTabValueChangedCallback( lv_event_t* e ) {
 	}
 }
 
+void uiKeyboardEnterCallback( lv_event_t* e ) {
+	const char* buttonText = NULL;
+	uint32_t buttonID = 0;
+	
+	buttonID = lv_keyboard_get_selected_button( ui_uiKeyboardKeyboard );
+	buttonText = lv_keyboard_get_button_text( ui_uiKeyboardKeyboard, buttonID );
+
+	if ( strcmp( buttonText, LV_SYMBOL_NEW_LINE ) == 0 ) 
+		keyboardAddKeyEvent( MKC_Return, 0 );
+}
+
 void uiKeyboardInsertCallback( lv_event_t* e ) {
 	// Do nothing if we're already spitting out text
-	if ( keyboardEventCount == 0 )
+	if ( keyboardEventCount == 0 ) {
 		keyboardMacKeyFromString( lv_textarea_get_text( ui_uiKeyboardTextArea ) );
+		lv_textarea_set_text( ui_uiKeyboardTextArea, "" );
+	}
 }
 
 void uiKeyboardBKSPCallback( lv_event_t* e ) {
@@ -1608,6 +1622,8 @@ void uiMouseTabValueChangedCallback( lv_event_t* e ) {
 			inputMouseButtonBit = 0;
 			break;
 	};
+	
+	inputArrowMapping = lv_dropdown_get_selected( ui_uiDropdownArrowKeyMapping );
 }
 
 #include "SCRNEMDV.h"
@@ -3991,9 +4007,36 @@ LOCALPROC inputMouseMove_Trackpad( void ) {
 	}
 }
 
+LOCALPROC inputArrowMove_DPAD( void ) {
+	if ( inputKeysDown & KEY_LEFT )	Keyboard_UpdateKeyMap2( MKC_Left, trueblnr );
+	if ( inputKeysUp & KEY_LEFT ) Keyboard_UpdateKeyMap2( MKC_Left, falseblnr );
+
+	if ( inputKeysDown & KEY_RIGHT ) Keyboard_UpdateKeyMap2( MKC_Right, trueblnr );
+	if ( inputKeysUp & KEY_RIGHT ) Keyboard_UpdateKeyMap2( MKC_Right, falseblnr );
+
+	if ( inputKeysDown & KEY_UP ) Keyboard_UpdateKeyMap2( MKC_Up, trueblnr );
+	if ( inputKeysUp & KEY_UP ) Keyboard_UpdateKeyMap2( MKC_Up, falseblnr );
+
+	if ( inputKeysDown & KEY_DOWN )	Keyboard_UpdateKeyMap2( MKC_Down, trueblnr );
+	if ( inputKeysUp & KEY_DOWN ) Keyboard_UpdateKeyMap2( MKC_Down, falseblnr );
+}
+
+LOCALPROC inputArrowMove_ABXY( void ) {
+	if ( inputKeysDown & KEY_Y ) Keyboard_UpdateKeyMap2( MKC_Left, trueblnr );
+	if ( inputKeysUp & KEY_Y ) Keyboard_UpdateKeyMap2( MKC_Left, falseblnr );
+
+	if ( inputKeysDown & KEY_A ) Keyboard_UpdateKeyMap2( MKC_Right, trueblnr );
+	if ( inputKeysUp & KEY_A ) Keyboard_UpdateKeyMap2( MKC_Right, falseblnr );
+
+	if ( inputKeysDown & KEY_X ) Keyboard_UpdateKeyMap2( MKC_Up, trueblnr );
+	if ( inputKeysUp & KEY_X ) Keyboard_UpdateKeyMap2( MKC_Up, falseblnr );
+
+	if ( inputKeysDown & KEY_B ) Keyboard_UpdateKeyMap2( MKC_Down, trueblnr );
+	if ( inputKeysUp & KEY_B ) Keyboard_UpdateKeyMap2( MKC_Down, falseblnr );
+}
+
 LOCALPROC CheckForSystemEvents(void) {
 	static uint32_t nextLVGLTick = 0;
-	static uint32_t nextInputScan = 0;
 	KeyboardEvent* theEvent = NULL;
 
 	uint32_t tickNow = 0;
@@ -4042,6 +4085,18 @@ LOCALPROC CheckForSystemEvents(void) {
 				inputMouseMove_Trackpad( );
 			default:
 				break;
+		};
+	}
+
+	if ( inputKeysDown || inputKeysHeld || inputKeysUp ) {
+		switch ( inputArrowMapping ) {
+			case UI_SEL_ARROWK_DPAD:
+				inputArrowMove_DPAD( );
+				break;
+			case UI_SEL_ARROWK_ABXY:
+				inputArrowMove_ABXY( );
+				break;
+			default: break;
 		};
 	}
 

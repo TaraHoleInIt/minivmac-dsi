@@ -15,6 +15,7 @@ void uiEmulatorTabValueChangedCallback(lv_event_t * e);
 void uiCallbackEmulatorReset(lv_event_t * e);
 void uiCallbackEmulatorExit(lv_event_t * e);
 void uiMouseTabValueChangedCallback(lv_event_t * e);
+void uiKeyboardEnterCallback(lv_event_t * e);
 void uiKeyboardInsertCallback(lv_event_t * e);
 void uiKeyboardBKSPCallback(lv_event_t * e);
 void uiKeyboardESCCallback(lv_event_t * e);
