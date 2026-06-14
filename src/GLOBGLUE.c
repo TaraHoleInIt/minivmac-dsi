@@ -1301,7 +1301,7 @@ LOCALPROC get_fail_realblock(ATTep p)
 }
 #endif
 
-GLOBALFUNC ui5b MMDV_Access(ATTep p, ui5b Data,
+GLOBALFUNC ITCM_CODE ARM_CODE ui5b MMDV_Access(ATTep p, ui5b Data,
 	blnr WriteMem, blnr ByteSize, CPTR addr)
 {
 	switch (p->MMDV) {

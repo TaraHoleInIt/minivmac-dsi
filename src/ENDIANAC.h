@@ -55,6 +55,14 @@ LOCALINLINEFUNC ITCM_CODE ARM_CODE ui5r do_get_mem_long( ui3p a ) {
 	return ( do_get_mem_word( a ) << 16 ) | do_get_mem_word( ( ( ui3b* ) a ) + 2 );
 }
 
+LOCALINLINEFUNC ITCM_CODE ARM_CODE ui5b do_get_mem_long_aligned( ui3p a ) {
+	return __builtin_bswap32( *( ( ui5b* ) a ) );
+}
+
+LOCALINLINEFUNC ITCM_CODE ARM_CODE void do_put_mem_long_aligned( ui3p a, ui5b v ) {
+	*( ( ui5b* ) a ) = __builtin_bswap32( v );
+}
+
 #if 0
 #if BigEndianUnaligned
 #define do_get_mem_long(a) ((ui5r)*((ui5b *)(a)))

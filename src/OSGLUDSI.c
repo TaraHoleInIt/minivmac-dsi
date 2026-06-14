@@ -76,8 +76,8 @@ LOCALVAR char *d_arg = NULL;
 LOCALVAR char *n_arg = NULL;
 
 #if CanGetAppPath
-LOCALVAR char *app_parent = NULL;
-LOCALVAR char *pref_dir = NULL;
+LOCALVAR char app_parent[ 256 ];
+LOCALVAR char pref_dir[ 256 ];
 #endif
 
 #define MyPathSep '/'
@@ -4295,17 +4295,19 @@ LOCALPROC UninitWhereAmI(void)
 #endif
 
 LOCALFUNC blnr InitFS( void ) {
-	if ( nitroFSInit( NULL ) ) {
-		app_parent = "nitro:/data/minivmac/";
-		pref_dir = "nitro:/data/minivmac/";
+	int len = 0;
 
-		chdir( app_parent );
-		return trueblnr;
-	}
+	// if ( nitroFSInit( NULL ) ) {
+	// 	app_parent = "nitro:/data/minivmac/";
+	// 	pref_dir = "nitro:/data/minivmac/";
+
+	// 	chdir( app_parent );
+	// 	return trueblnr;
+	// }
 	
 	if ( fatInitDefault( ) ) {
-		app_parent = "sd:/data/minivmac/";
-		pref_dir = "sd:/data/minivmac/";
+		len = snprintf( app_parent, sizeof( app_parent ) - 1, "%s/data/minivmac", fatGetDefaultDrive( ) );
+		strncpy( pref_dir, app_parent, len );
 
 		chdir( app_parent );
 		return trueblnr;

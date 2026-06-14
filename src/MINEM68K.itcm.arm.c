@@ -935,7 +935,7 @@ LOCALFUNC ui5r my_reg_call get_long(CPTR addr)
 		ui3p m = (addr & V_regs.MATCrdL.usemask)
 			+ V_regs.MATCrdL.usebase;
 		if ((addr & V_regs.MATCrdL.cmpmask) == V_regs.MATCrdL.cmpvalu) {
-			return ui5r_FromSLong(do_get_mem_long(m));
+			return ui5r_FromSLong(do_get_mem_long_aligned(m));
 		} else {
 			return get_long_ext(addr);
 		}
