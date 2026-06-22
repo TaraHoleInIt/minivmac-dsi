@@ -12,17 +12,17 @@
 #define MySoundRecenterSilence 0
 #define kLn2SoundSampSz 3
 
-#define dbglog_HAVE 1
+#define dbglog_HAVE 0
 #define dbglog_ToStdErr 1
 
 #define WantAbnormalReports 0
 
 #define NumDrives 6
 #define NonDiskProtect 1
-#define IncludeSonyRawMode 0
-#define IncludeSonyGetName 0
-#define IncludeSonyNew 0
-#define IncludeSonyNameNew 0
+#define IncludeSonyRawMode 1
+#define IncludeSonyGetName 1
+#define IncludeSonyNew 1
+#define IncludeSonyNameNew 1
 
 #define vMacScreenHeight 342
 #define vMacScreenWidth 512

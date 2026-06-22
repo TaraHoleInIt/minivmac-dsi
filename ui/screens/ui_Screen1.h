@@ -31,6 +31,7 @@ extern lv_obj_t *ui_uiSwitchScale;
 extern lv_obj_t *ui_Label3;
 extern void ui_event_uiSwitchInvert( lv_event_t * e);
 extern lv_obj_t *ui_uiSwitchInvert;
+extern lv_obj_t *ui_uiTabPageInsert;
 extern lv_obj_t *ui_uiTabPageEmulator;
 extern lv_obj_t *ui_Label9;
 extern void ui_event_uiDropdownEmuSpeed( lv_event_t * e);

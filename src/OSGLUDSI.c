@@ -52,6 +52,8 @@ LOCALVAR blnr HaveSoundOut = falseblnr;
 
 /* --- some simple utilities --- */
 
+uint32_t systemGetTicks( void );
+
 GLOBALOSGLUPROC MyMoveBytes(anyp srcPtr, anyp destPtr, si5b byteCount)
 {
 	(void) memcpy((char *)destPtr, (char *)srcPtr, byteCount);
@@ -110,6 +112,35 @@ LOCALFUNC tMacErr ChildPath(char *x, char *y, char **r)
 
 	return err;
 }
+
+#if UseActvFile || IncludeSonyNew
+LOCALFUNC tMacErr FindOrMakeChild(char *x, char *y, char **r)
+{
+	tMacErr err;
+	struct stat folder_info;
+	char *r0;
+
+	if (mnvm_noErr == (err = ChildPath(x, y, &r0))) {
+		if (0 != stat(r0, &folder_info)) {
+			if (0 != mkdir(r0, S_IRWXU)) {
+				err = mnvm_miscErr;
+			} else {
+				*r = r0;
+				err = mnvm_noErr;
+			}
+		} else {
+			if (! S_ISDIR(folder_info.st_mode)) {
+				err = mnvm_miscErr;
+			} else {
+				*r = r0;
+				err = mnvm_noErr;
+			}
+		}
+	}
+
+	return err;
+}
+#endif
 
 LOCALPROC MyMayFree(char *p)
 {
@@ -205,6 +236,141 @@ LOCALPROC dbglog_close0(void)
 
 /* --- text translation --- */
 
+#if IncludePbufs
+/* this is table for Windows, any changes needed for X? */
+LOCALVAR const ui3b Native2MacRomanTab[] = {
+	0xAD, 0xB0, 0xE2, 0xC4, 0xE3, 0xC9, 0xA0, 0xE0,
+	0xF6, 0xE4, 0xB6, 0xDC, 0xCE, 0xB2, 0xB3, 0xB7,
+	0xB8, 0xD4, 0xD5, 0xD2, 0xD3, 0xA5, 0xD0, 0xD1,
+	0xF7, 0xAA, 0xC5, 0xDD, 0xCF, 0xB9, 0xC3, 0xD9,
+	0xCA, 0xC1, 0xA2, 0xA3, 0xDB, 0xB4, 0xBA, 0xA4,
+	0xAC, 0xA9, 0xBB, 0xC7, 0xC2, 0xBD, 0xA8, 0xF8,
+	0xA1, 0xB1, 0xC6, 0xD7, 0xAB, 0xB5, 0xA6, 0xE1,
+	0xFC, 0xDA, 0xBC, 0xC8, 0xDE, 0xDF, 0xF0, 0xC0,
+	0xCB, 0xE7, 0xE5, 0xCC, 0x80, 0x81, 0xAE, 0x82,
+	0xE9, 0x83, 0xE6, 0xE8, 0xED, 0xEA, 0xEB, 0xEC,
+	0xF5, 0x84, 0xF1, 0xEE, 0xEF, 0xCD, 0x85, 0xF9,
+	0xAF, 0xF4, 0xF2, 0xF3, 0x86, 0xFA, 0xFB, 0xA7,
+	0x88, 0x87, 0x89, 0x8B, 0x8A, 0x8C, 0xBE, 0x8D,
+	0x8F, 0x8E, 0x90, 0x91, 0x93, 0x92, 0x94, 0x95,
+	0xFD, 0x96, 0x98, 0x97, 0x99, 0x9B, 0x9A, 0xD6,
+	0xBF, 0x9D, 0x9C, 0x9E, 0x9F, 0xFE, 0xFF, 0xD8
+};
+#endif
+
+#if IncludePbufs
+LOCALFUNC tMacErr NativeTextToMacRomanPbuf(char *x, tPbuf *r)
+{
+	if (NULL == x) {
+		return mnvm_miscErr;
+	} else {
+		ui3p p;
+		ui5b L = strlen(x);
+
+		p = (ui3p)malloc(L);
+		if (NULL == p) {
+			return mnvm_miscErr;
+		} else {
+			ui3b *p0 = (ui3b *)x;
+			ui3b *p1 = (ui3b *)p;
+			int i;
+
+			for (i = L; --i >= 0; ) {
+				ui3b v = *p0++;
+				if (v >= 128) {
+					v = Native2MacRomanTab[v - 128];
+				} else if (10 == v) {
+					v = 13;
+				}
+				*p1++ = v;
+			}
+
+			return PbufNewFromPtr(p, L, r);
+		}
+	}
+}
+#endif
+
+#if IncludePbufs
+/* this is table for Windows, any changes needed for X? */
+LOCALVAR const ui3b MacRoman2NativeTab[] = {
+	0xC4, 0xC5, 0xC7, 0xC9, 0xD1, 0xD6, 0xDC, 0xE1,
+	0xE0, 0xE2, 0xE4, 0xE3, 0xE5, 0xE7, 0xE9, 0xE8,
+	0xEA, 0xEB, 0xED, 0xEC, 0xEE, 0xEF, 0xF1, 0xF3,
+	0xF2, 0xF4, 0xF6, 0xF5, 0xFA, 0xF9, 0xFB, 0xFC,
+	0x86, 0xB0, 0xA2, 0xA3, 0xA7, 0x95, 0xB6, 0xDF,
+	0xAE, 0xA9, 0x99, 0xB4, 0xA8, 0x80, 0xC6, 0xD8,
+	0x81, 0xB1, 0x8D, 0x8E, 0xA5, 0xB5, 0x8A, 0x8F,
+	0x90, 0x9D, 0xA6, 0xAA, 0xBA, 0xAD, 0xE6, 0xF8,
+	0xBF, 0xA1, 0xAC, 0x9E, 0x83, 0x9A, 0xB2, 0xAB,
+	0xBB, 0x85, 0xA0, 0xC0, 0xC3, 0xD5, 0x8C, 0x9C,
+	0x96, 0x97, 0x93, 0x94, 0x91, 0x92, 0xF7, 0xB3,
+	0xFF, 0x9F, 0xB9, 0xA4, 0x8B, 0x9B, 0xBC, 0xBD,
+	0x87, 0xB7, 0x82, 0x84, 0x89, 0xC2, 0xCA, 0xC1,
+	0xCB, 0xC8, 0xCD, 0xCE, 0xCF, 0xCC, 0xD3, 0xD4,
+	0xBE, 0xD2, 0xDA, 0xDB, 0xD9, 0xD0, 0x88, 0x98,
+	0xAF, 0xD7, 0xDD, 0xDE, 0xB8, 0xF0, 0xFD, 0xFE
+};
+#endif
+
+#if IncludePbufs
+LOCALFUNC blnr MacRomanTextToNativePtr(tPbuf i, blnr IsFileName,
+	ui3p *r)
+{
+	ui3p p;
+	void *Buffer = PbufDat[i];
+	ui5b L = PbufSize[i];
+
+	p = (ui3p)malloc(L + 1);
+	if (p != NULL) {
+		ui3b *p0 = (ui3b *)Buffer;
+		ui3b *p1 = (ui3b *)p;
+		int j;
+
+		if (IsFileName) {
+			for (j = L; --j >= 0; ) {
+				ui3b x = *p0++;
+				if (x < 32) {
+					x = '-';
+				} else if (x >= 128) {
+					x = MacRoman2NativeTab[x - 128];
+				} else {
+					switch (x) {
+						case '/':
+						case '<':
+						case '>':
+						case '|':
+						case ':':
+							x = '-';
+						default:
+							break;
+					}
+				}
+				*p1++ = x;
+			}
+			if ('.' == p[0]) {
+				p[0] = '-';
+			}
+		} else {
+			for (j = L; --j >= 0; ) {
+				ui3b x = *p0++;
+				if (x >= 128) {
+					x = MacRoman2NativeTab[x - 128];
+				} else if (13 == x) {
+					x = '\n';
+				}
+				*p1++ = x;
+			}
+		}
+		*p1 = 0;
+
+		*r = p;
+		return trueblnr;
+	}
+	return falseblnr;
+}
+#endif
+
 LOCALPROC NativeStrFromCStr(char *r, char *s)
 {
 	ui3b ps[ClStrMaxLength];
@@ -265,6 +431,10 @@ LOCALPROC NativeStrFromCStr(char *r, char *s)
 
 LOCALVAR MyFilePtr Drives[NumDrives]; /* open disk image files */
 
+#if IncludeSonyGetName || IncludeSonyNew
+LOCALVAR char *DriveNames[NumDrives];
+#endif
+
 LOCALPROC InitDrives(void)
 {
 	/*
@@ -275,6 +445,10 @@ LOCALPROC InitDrives(void)
 
 	for (i = 0; i < NumDrives; ++i) {
 		Drives[i] = NotAfileRef;
+
+#if IncludeSonyGetName || IncludeSonyNew
+		DriveNames[i] = NULL;
+#endif
 	}
 }
 
@@ -291,6 +465,11 @@ GLOBALOSGLUFUNC tMacErr vSonyTransfer(blnr IsWrite, ui3p Buffer,
 	tMacErr err = mnvm_miscErr;
 	MyFilePtr refnum = Drives[Drive_No];
 	ui5r NewSony_Count = 0;
+	uint32_t delta = 0;
+	static uint32_t longest = 0;
+	uint32_t pre = 0;
+
+	pre = systemGetTicks( );
 
 	if (MySeek(refnum, Sony_Start, MySeekSet) >= 0) {
 		if (IsWrite) {
@@ -307,6 +486,13 @@ GLOBALOSGLUFUNC tMacErr vSonyTransfer(blnr IsWrite, ui3p Buffer,
 	if (nullpr != Sony_ActCount) {
 		*Sony_ActCount = NewSony_Count;
 	}
+
+	delta = systemGetTicks( ) - pre;
+
+	if ( delta > longest )
+		longest = delta;
+
+	//printf( "Sony: (%lums); longest: (%lums)\n", delta, longest );
 
 	return err; /*& figure out what really to return &*/
 }
@@ -338,20 +524,29 @@ GLOBALOSGLUFUNC tMacErr vSonyGetSize(tDrive Drive_No, ui5r *Sony_Count)
 
 LOCALFUNC tMacErr vSonyEject0(tDrive Drive_No, blnr deleteit)
 {
-	/*
-		OSGLUxxx common:
-		close disk image number Drive_No.
-
-		return 0 if it succeeds, nonzero (a
-		Macintosh style error code, but -1
-		will do) on failure.
-	*/
-	MyFilePtr refnum = Drives[Drive_No];
+	FILE *refnum = Drives[Drive_No];
 
 	DiskEjectedNotify(Drive_No);
 
-	MyFileClose(refnum);
+#if HaveAdvisoryLocks
+	MyUnlockFile(refnum);
+#endif
+
+	fclose(refnum);
 	Drives[Drive_No] = NotAfileRef; /* not really needed */
+
+#if IncludeSonyGetName || IncludeSonyNew
+	{
+		char *s = DriveNames[Drive_No];
+		if (NULL != s) {
+			if (deleteit) {
+				remove(s);
+			}
+			free(s);
+			DriveNames[Drive_No] = NULL; /* not really needed */
+		}
+	}
+#endif
 
 	return mnvm_noErr;
 }
@@ -360,6 +555,13 @@ GLOBALOSGLUFUNC tMacErr vSonyEject(tDrive Drive_No)
 {
 	return vSonyEject0(Drive_No, falseblnr);
 }
+
+#if IncludeSonyNew
+GLOBALOSGLUFUNC tMacErr vSonyEjectDelete(tDrive Drive_No)
+{
+	return vSonyEject0(Drive_No, trueblnr);
+}
+#endif
 
 LOCALPROC UnInitDrives(void)
 {
@@ -372,15 +574,27 @@ LOCALPROC UnInitDrives(void)
 	}
 }
 
-LOCALFUNC blnr Sony_Insert0(MyFilePtr refnum, blnr locked,
+#if IncludeSonyGetName
+GLOBALOSGLUFUNC tMacErr vSonyGetName(tDrive Drive_No, tPbuf *r)
+{
+	char *drivepath = DriveNames[Drive_No];
+	if (NULL == drivepath) {
+		return mnvm_miscErr;
+	} else {
+		char *s = strrchr(drivepath, '/');
+		if (NULL == s) {
+			s = drivepath;
+		} else {
+			++s;
+		}
+		return NativeTextToMacRomanPbuf(s, r);
+	}
+}
+#endif
+
+LOCALFUNC blnr Sony_Insert0(FILE *refnum, blnr locked,
 	char *drivepath)
 {
-	/*
-		OSGLUxxx common:
-		Given reference to open file, mount it as a disk image file.
-		if "locked", then mount it as a locked disk.
-	*/
-
 	tDrive Drive_No;
 	blnr IsOk = falseblnr;
 
@@ -390,16 +604,30 @@ LOCALFUNC blnr Sony_Insert0(MyFilePtr refnum, blnr locked,
 	} else {
 		/* printf("Sony_Insert0 %d\n", (int)Drive_No); */
 
+#if HaveAdvisoryLocks
+		if (locked || MyLockFile(refnum))
+#endif
 		{
 			Drives[Drive_No] = refnum;
 			DiskInsertNotify(Drive_No, locked);
+
+#if IncludeSonyGetName || IncludeSonyNew
+			{
+				ui5b L = strlen(drivepath);
+				char *p = malloc(L + 1);
+				if (p != NULL) {
+					(void) memcpy(p, drivepath, L + 1);
+				}
+				DriveNames[Drive_No] = p;
+			}
+#endif
 
 			IsOk = trueblnr;
 		}
 	}
 
 	if (! IsOk) {
-		MyFileClose(refnum);
+		fclose(refnum);
 	}
 
 	return IsOk;
@@ -408,7 +636,7 @@ LOCALFUNC blnr Sony_Insert0(MyFilePtr refnum, blnr locked,
 LOCALFUNC blnr Sony_Insert1(char *drivepath, blnr silentfail)
 {
 	blnr locked = falseblnr;
-	/* printf("Sony_Insert1 %s\n", drivepath); */
+	printf("Sony_Insert1 %s\n", drivepath);
 	MyFilePtr refnum = MyFileOpen(drivepath, "rb+");
 	if (NULL == refnum) {
 		locked = trueblnr;
@@ -513,6 +741,86 @@ LOCALFUNC blnr LoadInitialImages(void)
 
 	return trueblnr;
 }
+
+#if IncludeSonyNew
+LOCALFUNC blnr WriteZero(FILE *refnum, ui5b L)
+{
+#define ZeroBufferSize 2048
+	ui5b i;
+	ui3b buffer[ZeroBufferSize];
+
+	memset(&buffer, 0, ZeroBufferSize);
+
+	while (L > 0) {
+		i = (L > ZeroBufferSize) ? ZeroBufferSize : L;
+		if (fwrite(buffer, 1, i, refnum) != i) {
+			return falseblnr;
+		}
+		L -= i;
+	}
+	return trueblnr;
+}
+#endif
+
+#if IncludeSonyNew
+LOCALPROC MakeNewDisk0(ui5b L, char *drivepath)
+{
+	blnr IsOk = falseblnr;
+	FILE *refnum = fopen(drivepath, "wb+");
+	if (NULL == refnum) {
+		MacMsg(kStrOpenFailTitle, kStrOpenFailMessage, falseblnr);
+	} else {
+		if (WriteZero(refnum, L)) {
+			IsOk = Sony_Insert0(refnum, falseblnr, drivepath);
+			refnum = NULL;
+		}
+		if (refnum != NULL) {
+			fclose(refnum);
+		}
+		if (! IsOk) {
+			(void) remove(drivepath);
+		}
+	}
+}
+#endif
+
+#if IncludeSonyNew
+LOCALPROC MakeNewDisk(ui5b L, char *drivename)
+{
+	char *d =
+#if CanGetAppPath
+		(NULL == d_arg) ? app_parent :
+#endif
+		d_arg;
+
+	if (NULL == d) {
+		MakeNewDisk0(L, drivename); /* in current directory */
+	} else {
+		tMacErr err;
+		char *t = NULL;
+		char *t2 = NULL;
+
+		if (mnvm_noErr == (err = FindOrMakeChild(d, "out", &t)))
+		if (mnvm_noErr == (err = ChildPath(t, drivename, &t2)))
+		{
+			MakeNewDisk0(L, t2);
+		}
+
+		MyMayFree(t2);
+		MyMayFree(t);
+	}
+}
+#endif
+
+#if IncludeSonyNew
+LOCALPROC MakeNewDiskAtDefault(ui5b L)
+{
+	char s[ClStrMaxLength + 1];
+
+	NativeStrFromCStr(s, "untitled.dsk");
+	MakeNewDisk(L, s);
+}
+#endif
 
 /* --- ROM --- */
 
@@ -722,8 +1030,7 @@ static int textureEndsScaledOffset[ 128 ];
 static int screenStartsScaled[ 128 ];
 static int screenEndsScaled[ 128 ];
 
-static volatile int videoScrollX = 0;
-static volatile int videoScrollY = 0;
+static volatile uint32_t videoScrollWord = 0;
 
 static volatile RenderScreenProc renderFunc = NULL;
 static volatile int renderNeedsRefresh = 1;
@@ -838,6 +1145,7 @@ LOCALFUNC void videoSetupLVGL( void ) {
     lv_indev_set_read_cb( lvInput, videoLVGLTouchRead );
 
     ui_init( );
+
 	uiSetupDefaults( );
 
 	// HACKHACKHACK
@@ -856,13 +1164,17 @@ LOCALFUNC void videoLVGLFlush( lv_display_t* disp, const lv_area_t* area, uint8_
 }
 
 LOCALFUNC void videoLVGLTouchRead( lv_indev_t* indev, lv_indev_data_t* data ) {
-    if ( ( inputKeysHeld & KEY_TOUCH ) && videoUIHasFocus( ) ) {
-        data->state = LV_INDEV_STATE_PRESSED;
-        data->point.x = inputTouchPos.px;
-        data->point.y = inputTouchPos.py;
-    } else {
-        data->state = LV_INDEV_STATE_RELEASED;
-    }
+	if ( videoUIHasFocus( ) ) {
+		if ( ( inputKeysDown | inputKeysHeld ) & KEY_TOUCH )
+			data->state = LV_INDEV_STATE_PRESSED;
+		else
+			data->state = LV_INDEV_STATE_RELEASED;
+		
+	    data->point.x = inputTouchPos.px;
+        data->point.y = inputTouchPos.py;	
+	} else {
+		data->state = LV_INDEV_STATE_RELEASED;
+	}
 }
 
 LOCALFUNC void videoWriteDebug( const char* text ) {
@@ -906,6 +1218,8 @@ LOCALFUNC void videoInit( void ) {
 
 	REG_BG0CNT |= BG_PRIORITY_3;
 	REG_BG1CNT |= BG_PRIORITY_0;
+
+	//bgShow( videoMacMsgBG );
 
 	consoleSelect( &videoMacMsgConsole );
 	consoleSetColor( &videoMacMsgConsole, CONSOLE_LIGHT_RED );
@@ -1201,6 +1515,13 @@ LOCALFUNC void videoFrameUnscaled( void ) {
     static const int depthNine = floattof32( 9.0f );
     static const int depthTen = floattof32( 10.0f );
     static const int screenScaleY = floattof32( 2.6666666667f );
+	int videoScrollX = 0;
+	int videoScrollY = 0;
+	uint32_t scrollWord = 0;
+
+	scrollWord = videoScrollWord;
+	videoScrollX = ( int ) ( scrollWord & 0xFFFF );
+	videoScrollY = ( int ) ( scrollWord >> 16 ) & 0xFFFF;
 
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity( );
@@ -1312,6 +1633,8 @@ typedef struct {
 } MacKeyDef;
 
 /* --- UI System Globals --- */
+
+LOCALVAR lv_obj_t* uiFileExplorer = NULL;
 
 LOCALVAR UIEmulatorSpeed speedSetting = UI_SEL_EMULATOR_SPEED_UNLIMITED;
 
@@ -1626,6 +1949,34 @@ void uiMouseTabValueChangedCallback( lv_event_t* e ) {
 	inputArrowMapping = lv_dropdown_get_selected( ui_uiDropdownArrowKeyMapping );
 }
 
+LOCALPROC uiFileExplorerValueChangedCallback( lv_event_t* e ) {
+	const char* selFileName = NULL;
+	const char* curPath = NULL;
+	char path[ 256 ];
+
+	curPath = lv_file_explorer_get_current_path( uiFileExplorer ) + 2;	// Skip past drive letter
+	selFileName = lv_file_explorer_get_selected_file_name( uiFileExplorer );
+
+	snprintf( path, sizeof( path ) - 1, "%s%s", curPath, selFileName );
+	Sony_Insert1( path, trueblnr );
+}
+
+LOCALFUNC blnr InitInsertDiskUI( void ) {
+	assert( ( uiFileExplorer = lv_file_explorer_create( ui_uiTabPageInsert ) ) != NULL );
+
+	lv_obj_set_style_text_font( uiFileExplorer, &lv_font_montserrat_8, LV_PART_MAIN );
+	lv_obj_set_style_text_font( uiFileExplorer, &lv_font_montserrat_8, LV_PART_ITEMS );
+	lv_obj_set_style_text_font( uiFileExplorer, &lv_font_montserrat_8, LV_PART_SELECTED );
+	lv_obj_set_style_text_font( uiFileExplorer, &lv_font_montserrat_8, LV_PART_ANY );
+
+	lv_obj_add_event_cb( uiFileExplorer, uiFileExplorerValueChangedCallback, LV_EVENT_VALUE_CHANGED, NULL );
+
+	lv_file_explorer_open_dir( uiFileExplorer, "C://data/minivmac" );
+	lv_file_explorer_set_sort( uiFileExplorer, LV_EXPLORER_SORT_KIND );
+
+	return trueblnr;
+}
+
 #include "SCRNEMDV.h"
 
 LOCALFUNC void videoCopyFBTexture( void ) {
@@ -1719,36 +2070,6 @@ LOCALPROC ForceShowCursor(void)
 	ability to move the cursor (in MyMoveMouse).
 */
 
-#ifndef HaveWorkingWarp
-#define HaveWorkingWarp 1
-#endif
-
-#if EnableMoveMouse && HaveWorkingWarp
-LOCALFUNC blnr MyMoveMouse(si4b h, si4b v)
-{
-	/*
-		OSGLUxxx common:
-		Move the cursor to the point h, v on the emulated screen.
-		If detect that this fails return falseblnr,
-			otherwise return trueblnr.
-		(On some platforms it is possible to move the curser,
-			but there is no way to detect failure.)
-	*/
-
-#if VarFullScreen
-	if (UseFullScreen)
-#endif
-#if MayFullScreen
-	{
-		h -= ViewHStart;
-		v -= ViewVStart;
-	}
-#endif
-
-	return trueblnr;
-}
-#endif
-
 /* cursor state */
 
 LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
@@ -1826,8 +2147,262 @@ LOCALPROC MousePositionNotifyRelative(int deltah, int deltav)
 	WantCursorHidden = ShouldHaveCursorHidden;
 }
 
-LOCALPROC CheckMouseState(void)
-{
+/* --- Input --- */
+
+#define HandleDSToMacKey( dskey, mackey ) do { \
+	if ( inputKeysDown & dskey ) \
+		Keyboard_UpdateKeyMap2( mackey, trueblnr ); \
+	if ( inputKeysUp & dskey ) \
+		Keyboard_UpdateKeyMap2( mackey, falseblnr ); \
+} while ( 0 )
+
+#define NumTouchSamples 4
+#define TouchSampleMask ( NumTouchSamples - 1 )
+
+LOCALVAR touchPosition touchBuffer[ NumTouchSamples ];
+LOCALVAR int touchIdx = 0;
+
+LOCALPROC inputTouchUpdate( touchPosition* out ) {
+	touchPosition* ptr = NULL;
+	touchPosition tmp;
+	int px = 0;
+	int py = 0;
+	int i = 0;
+
+	assert( out != NULL );
+
+	if ( inputKeysDown & KEY_TOUCH ) {
+		for ( i = 0; i < NumTouchSamples; i++ )
+			touchRead( &touchBuffer[ i ] );
+
+		out->px = touchBuffer[ 0 ].px;
+		out->py = touchBuffer[ 0 ].py;
+		touchIdx = 0;
+	}
+
+	if ( inputKeysHeld & KEY_TOUCH ) {
+		ptr = &touchBuffer[ touchIdx ];
+		touchIdx = ( touchIdx + 1 ) & TouchSampleMask;
+
+		touchRead( ptr );
+
+		for ( i = 0; i < NumTouchSamples; i++ ) {
+			px+= touchBuffer[ i ].px;
+			py+= touchBuffer[ i ].py;
+		}
+
+		// Filtering:
+		out->px = px / NumTouchSamples;
+		out->py = py / NumTouchSamples;
+	}
+
+	if ( inputKeysUp & KEY_TOUCH ) {
+		// Fill with last position
+		memcpy( &tmp, &touchBuffer[ ( touchIdx - 1 ) & TouchSampleMask ], sizeof( touchPosition ) );
+
+		for ( i = 0; i < NumTouchSamples; i++ )
+			memcpy( &touchBuffer[ i ], &tmp, sizeof( touchPosition ) );
+
+		out->px = tmp.px;
+		out->py = tmp.py;
+		touchIdx = 0;
+	}
+}
+
+LOCALPROC inputMouseMove_DPAD( void ) {
+	int dx = 0;
+	int dy = 0;
+
+	dx = ( inputKeysHeld & KEY_LEFT ) ? -1 : dx;
+	dx = ( inputKeysHeld & KEY_RIGHT ) ? 1 : dx;
+
+	dy = ( inputKeysHeld & KEY_UP ) ? -1 : dy;
+	dy = ( inputKeysHeld & KEY_DOWN ) ? 1 : dy;
+
+	if ( dx || dy ) {
+		MousePositionNotifyRelative( 
+			dx * inputMouseAcceleration,
+			dy * inputMouseAcceleration
+		);
+	}
+}
+
+LOCALPROC inputMouseMove_ABXY( void ) {
+	int dx = 0;
+	int dy = 0;
+
+	dx = ( inputKeysHeld & KEY_Y ) ? -1 : dx;
+	dx = ( inputKeysHeld & KEY_A ) ? 1 : dx;
+
+	dy = ( inputKeysHeld & KEY_X ) ? -1 : dy;
+	dy = ( inputKeysHeld & KEY_B ) ? 1 : dy;
+
+	if ( dx || dy ) {
+		MousePositionNotifyRelative( 
+			dx * inputMouseAcceleration,
+			dy * inputMouseAcceleration
+		);
+	}
+}
+
+LOCALPROC inputMouseMove_Scaled( void ) {
+	static const int fxMacScreenHeight = inttof32( vMacScreenHeight );
+	static const int fxDSScreenHeight = inttof32( SCREEN_HEIGHT );
+	int mouseX = 0;
+	int mouseY = 0;
+
+	if ( ( ( inputKeysHeld | inputKeysDown )  & KEY_TOUCH ) && ! videoUIHasFocus( ) ) {
+		mouseX = inputTouchPos.px << 1;
+		mouseY = inttof32( inputTouchPos.py );
+
+		mouseY = divf32( mouseY, fxDSScreenHeight );
+		mouseY = mulf32( mouseY, fxMacScreenHeight );
+
+		MousePositionNotify( mouseX, f32toint( mouseY ) );
+	}
+}
+
+LOCALPROC inputMouseMove_Trackpad( void ) {
+	static int lastTouchX = 0;
+	static int lastTouchY = 0;
+	int dx = 0;
+	int dy = 0;
+
+	if ( ! videoUIHasFocus( ) ) {
+		if ( inputKeysDown & KEY_TOUCH ) {
+			lastTouchX = inputTouchPos.px;
+			lastTouchY = inputTouchPos.py;
+		}
+
+		if ( inputKeysHeld & KEY_TOUCH ) {
+			dx = inputTouchPos.px - lastTouchX;
+			dy = inputTouchPos.py - lastTouchY;
+
+			if ( dx || dy ) {
+				MousePositionNotifyRelative( 
+					dx * inputMouseAcceleration, 
+					dy * inputMouseAcceleration
+				);
+			}
+
+			lastTouchX = inputTouchPos.px;
+			lastTouchY = inputTouchPos.py;
+		}
+
+		if ( inputKeysUp & KEY_TOUCH ) {
+			dx = 0;
+			dy = 0;
+		}
+	}
+}
+
+LOCALPROC inputArrowMove_DPAD( void ) {
+	if ( inputKeysDown & KEY_LEFT )	Keyboard_UpdateKeyMap2( MKC_Left, trueblnr );
+	if ( inputKeysUp & KEY_LEFT ) Keyboard_UpdateKeyMap2( MKC_Left, falseblnr );
+
+	if ( inputKeysDown & KEY_RIGHT ) Keyboard_UpdateKeyMap2( MKC_Right, trueblnr );
+	if ( inputKeysUp & KEY_RIGHT ) Keyboard_UpdateKeyMap2( MKC_Right, falseblnr );
+
+	if ( inputKeysDown & KEY_UP ) Keyboard_UpdateKeyMap2( MKC_Up, trueblnr );
+	if ( inputKeysUp & KEY_UP ) Keyboard_UpdateKeyMap2( MKC_Up, falseblnr );
+
+	if ( inputKeysDown & KEY_DOWN )	Keyboard_UpdateKeyMap2( MKC_Down, trueblnr );
+	if ( inputKeysUp & KEY_DOWN ) Keyboard_UpdateKeyMap2( MKC_Down, falseblnr );
+}
+
+LOCALPROC inputArrowMove_ABXY( void ) {
+	if ( inputKeysDown & KEY_Y ) Keyboard_UpdateKeyMap2( MKC_Left, trueblnr );
+	if ( inputKeysUp & KEY_Y ) Keyboard_UpdateKeyMap2( MKC_Left, falseblnr );
+
+	if ( inputKeysDown & KEY_A ) Keyboard_UpdateKeyMap2( MKC_Right, trueblnr );
+	if ( inputKeysUp & KEY_A ) Keyboard_UpdateKeyMap2( MKC_Right, falseblnr );
+
+	if ( inputKeysDown & KEY_X ) Keyboard_UpdateKeyMap2( MKC_Up, trueblnr );
+	if ( inputKeysUp & KEY_X ) Keyboard_UpdateKeyMap2( MKC_Up, falseblnr );
+
+	if ( inputKeysDown & KEY_B ) Keyboard_UpdateKeyMap2( MKC_Down, trueblnr );
+	if ( inputKeysUp & KEY_B ) Keyboard_UpdateKeyMap2( MKC_Down, falseblnr );
+}
+
+LOCALPROC CheckInputState( void ) {
+	static int lastMouseX = 0;
+	static int lastMouseY = 0;
+	int scrollX = 0;
+	int scrollY = 0;
+
+	scanKeys( );
+
+	inputKeysDown = keysDown( );
+	inputKeysHeld = keysHeld( );
+	inputKeysUp = keysUp( );
+
+	if ( inputKeysDown || inputKeysHeld || inputKeysUp ) {
+		if ( ( inputKeysDown | inputKeysUp | inputKeysHeld ) & KEY_TOUCH )
+			inputTouchUpdate( &inputTouchPos );
+
+		switch ( inputMouseMode ) {
+			case UI_SEL_MOUSE_MODE_DPAD:
+				inputMouseMove_DPAD( );
+				break;
+			case UI_SEL_MOUSE_MODE_ABXY:
+				inputMouseMove_ABXY( );
+				break;
+			case UI_SEL_MOUSE_MODE_SCALED:
+				inputMouseMove_Scaled( );
+				break;
+			case UI_SEL_MOUSE_MODE_TRACKPAD: 
+				inputMouseMove_Trackpad( );
+				break;
+			default:
+				break;
+		};
+
+		switch ( inputArrowMapping ) {
+			case UI_SEL_ARROWK_DPAD:
+				inputArrowMove_DPAD( );
+				break;
+			case UI_SEL_ARROWK_ABXY:
+				inputArrowMove_ABXY( );
+				break;
+			default: break;
+		};
+	}
+
+	if ( ( CurMouseH != lastMouseX ) || ( CurMouseV != lastMouseY ) ) {
+		scrollX = CurMouseH - ( SCREEN_WIDTH / 2 );
+		scrollY = CurMouseV - ( SCREEN_HEIGHT / 2 );
+
+		scrollX = ( scrollX < 0 ) ? 0 : scrollX;
+		scrollX = ( scrollX > ( vMacScreenWidth - SCREEN_WIDTH ) ) ? vMacScreenWidth - SCREEN_WIDTH : scrollX;
+
+		scrollY = ( scrollY < 0 ) ? 0 : scrollY;
+		scrollY = ( scrollY > ( vMacScreenHeight - SCREEN_HEIGHT ) ) ? vMacScreenHeight - SCREEN_HEIGHT : scrollY;
+
+		videoScrollWord = ( scrollX & 0xFFFF ) | ( ( scrollY & 0xFFFF ) << 16 );
+		renderNeedsRefresh = 1;
+	}
+
+	if ( inputKeysDown & inputMouseButtonBit )
+		MyMouseButtonSet( trueblnr );
+
+	if ( inputKeysUp & inputMouseButtonBit )
+		MyMouseButtonSet( falseblnr );	
+
+	if ( inputKeysUp & KEY_START ) {
+		if ( videoMacMsgBGOn ) {
+			videoMacMsgBGOn = 0;
+
+			bgHide( videoMacMsgBG );
+			MacMsgDisplayOff( );
+		}
+	}
+
+	if ( inputKeysUp & KEY_SELECT ) {
+		videoSwapScreens( );
+	}
+
+	lastMouseX = CurMouseH;
+	lastMouseY = CurMouseV;
 }
 
 /* --- keyboard input --- */
@@ -3638,36 +4213,6 @@ LOCALPROC UngrabMachine(void)
 }
 #endif
 
-#if EnableFSMouseMotion && HaveWorkingWarp
-LOCALPROC MyMouseConstrain(void)
-{
-	si4b shiftdh;
-	si4b shiftdv;
-
-	if (SavedMouseH < ViewHStart + (ViewHSize / 4)) {
-		shiftdh = ViewHSize / 2;
-	} else if (SavedMouseH > ViewHStart + ViewHSize - (ViewHSize / 4)) {
-		shiftdh = - ViewHSize / 2;
-	} else {
-		shiftdh = 0;
-	}
-	if (SavedMouseV < ViewVStart + (ViewVSize / 4)) {
-		shiftdv = ViewVSize / 2;
-	} else if (SavedMouseV > ViewVStart + ViewVSize - (ViewVSize / 4)) {
-		shiftdv = - ViewVSize / 2;
-	} else {
-		shiftdv = 0;
-	}
-	if ((shiftdh != 0) || (shiftdv != 0)) {
-		SavedMouseH += shiftdh;
-		SavedMouseV += shiftdv;
-		if (! MyMoveMouse(SavedMouseH, SavedMouseV)) {
-			HaveMouseMotion = falseblnr;
-		}
-	}
-}
-#endif
-
 LOCALFUNC blnr CreateMainWindow(void)
 {
 	return trueblnr;
@@ -3697,10 +4242,6 @@ LOCALFUNC blnr ReCreateMainWindow(void)
 #endif
 
 	(void) CreateMainWindow();
-
-	if (HaveCursorHidden) {
-		(void) MyMoveMouse(CurMouseH, CurMouseV);
-	}
 
 	return trueblnr;
 }
@@ -3758,7 +4299,7 @@ LOCALPROC CheckForSavedTasks(void)
 		MyEvtQTryRecoverFromFull();
 	}
 
-#if EnableFSMouseMotion && HaveWorkingWarp
+	#if EnableFSMouseMotion && HaveWorkingWarp
 	if (HaveMouseMotion) {
 		MyMouseConstrain();
 	}
@@ -3833,6 +4374,29 @@ LOCALPROC CheckForSavedTasks(void)
 		} else {
 			UngrabMachine();
 		}
+	}
+#endif
+
+#if IncludeSonyNew
+	if (vSonyNewDiskWanted) {
+#if IncludeSonyNameNew
+		if (vSonyNewDiskName != NotAPbuf) {
+			ui3p NewDiskNameDat;
+			if (MacRomanTextToNativePtr(vSonyNewDiskName, trueblnr,
+				&NewDiskNameDat))
+			{
+				MakeNewDisk(vSonyNewDiskSize, (char *)NewDiskNameDat);
+				free(NewDiskNameDat);
+			}
+			PbufDispose(vSonyNewDiskName);
+			vSonyNewDiskName = NotAPbuf;
+		} else
+#endif
+		{
+			MakeNewDiskAtDefault(vSonyNewDiskSize);
+		}
+		vSonyNewDiskWanted = falseblnr;
+			/* must be done after may have gotten disk */
 	}
 #endif
 
@@ -3919,131 +4483,17 @@ LOCALPROC WaitForTheNextEvent(void)
 {
 }
 
-#define HandleDSToMacKey( dskey, mackey ) do { \
-	if ( inputKeysDown & dskey ) \
-		Keyboard_UpdateKeyMap2( mackey, trueblnr ); \
-	if ( inputKeysUp & dskey ) \
-		Keyboard_UpdateKeyMap2( mackey, falseblnr ); \
-} while ( 0 )
-
-LOCALPROC inputMouseMove_DPAD( void ) {
-	int dx = 0;
-	int dy = 0;
-
-	dx = ( inputKeysHeld & KEY_LEFT ) ? -1 : dx;
-	dx = ( inputKeysHeld & KEY_RIGHT ) ? 1 : dx;
-
-	dy = ( inputKeysHeld & KEY_UP ) ? -1 : dy;
-	dy = ( inputKeysHeld & KEY_DOWN ) ? 1 : dy;
-
-	MousePositionNotifyRelative( 
-		dx * inputMouseAcceleration,
-		dy * inputMouseAcceleration
-	);
-}
-
-LOCALPROC inputMouseMove_ABXY( void ) {
-	int dx = 0;
-	int dy = 0;
-
-	dx = ( inputKeysHeld & KEY_Y ) ? -1 : dx;
-	dx = ( inputKeysHeld & KEY_A ) ? 1 : dx;
-
-	dy = ( inputKeysHeld & KEY_X ) ? -1 : dy;
-	dy = ( inputKeysHeld & KEY_B ) ? 1 : dy;
-
-	MousePositionNotifyRelative( 
-		dx * inputMouseAcceleration,
-		dy * inputMouseAcceleration
-	);
-}
-
-LOCALPROC inputMouseMove_Scaled( void ) {
-	static const int fxMacScreenHeight = inttof32( vMacScreenHeight );
-	static const int fxDSScreenHeight = inttof32( SCREEN_HEIGHT );
-	int mouseX = 0;
-	int mouseY = 0;
-
-	if ( inputKeysHeld & KEY_TOUCH && ! videoUIHasFocus( ) ) {
-		mouseX = inputTouchPos.px << 1;
-		mouseY = inttof32( inputTouchPos.py );
-
-		mouseY = divf32( mouseY, fxDSScreenHeight );
-		mouseY = mulf32( mouseY, fxMacScreenHeight );
-
-		MousePositionNotify( mouseX, f32toint( mouseY ) );
-	}
-}
-
-LOCALPROC inputMouseMove_Trackpad( void ) {
-	static int lastTouchX = 0;
-	static int lastTouchY = 0;
-	int dx = 0;
-	int dy = 0;
-
-	if ( ! videoUIHasFocus( ) ) {
-		if ( inputKeysDown & KEY_TOUCH ) {
-			lastTouchX = inputTouchPos.px;
-			lastTouchY = inputTouchPos.py;
-		}
-
-		if ( inputKeysHeld & KEY_TOUCH ) {
-			dx = inputTouchPos.px - lastTouchX;
-			dy = inputTouchPos.py - lastTouchY;
-
-			MousePositionNotifyRelative( 
-				dx * inputMouseAcceleration, 
-				dy * inputMouseAcceleration
-			);
-
-			lastTouchX = inputTouchPos.px;
-			lastTouchY = inputTouchPos.py;
-		}
-
-		if ( inputKeysUp & KEY_TOUCH ) {
-			dx = 0;
-			dy = 0;
-		}
-	}
-}
-
-LOCALPROC inputArrowMove_DPAD( void ) {
-	if ( inputKeysDown & KEY_LEFT )	Keyboard_UpdateKeyMap2( MKC_Left, trueblnr );
-	if ( inputKeysUp & KEY_LEFT ) Keyboard_UpdateKeyMap2( MKC_Left, falseblnr );
-
-	if ( inputKeysDown & KEY_RIGHT ) Keyboard_UpdateKeyMap2( MKC_Right, trueblnr );
-	if ( inputKeysUp & KEY_RIGHT ) Keyboard_UpdateKeyMap2( MKC_Right, falseblnr );
-
-	if ( inputKeysDown & KEY_UP ) Keyboard_UpdateKeyMap2( MKC_Up, trueblnr );
-	if ( inputKeysUp & KEY_UP ) Keyboard_UpdateKeyMap2( MKC_Up, falseblnr );
-
-	if ( inputKeysDown & KEY_DOWN )	Keyboard_UpdateKeyMap2( MKC_Down, trueblnr );
-	if ( inputKeysUp & KEY_DOWN ) Keyboard_UpdateKeyMap2( MKC_Down, falseblnr );
-}
-
-LOCALPROC inputArrowMove_ABXY( void ) {
-	if ( inputKeysDown & KEY_Y ) Keyboard_UpdateKeyMap2( MKC_Left, trueblnr );
-	if ( inputKeysUp & KEY_Y ) Keyboard_UpdateKeyMap2( MKC_Left, falseblnr );
-
-	if ( inputKeysDown & KEY_A ) Keyboard_UpdateKeyMap2( MKC_Right, trueblnr );
-	if ( inputKeysUp & KEY_A ) Keyboard_UpdateKeyMap2( MKC_Right, falseblnr );
-
-	if ( inputKeysDown & KEY_X ) Keyboard_UpdateKeyMap2( MKC_Up, trueblnr );
-	if ( inputKeysUp & KEY_X ) Keyboard_UpdateKeyMap2( MKC_Up, falseblnr );
-
-	if ( inputKeysDown & KEY_B ) Keyboard_UpdateKeyMap2( MKC_Down, trueblnr );
-	if ( inputKeysUp & KEY_B ) Keyboard_UpdateKeyMap2( MKC_Down, falseblnr );
-}
-
-LOCALPROC CheckForSystemEvents(void) {
+LOCALPROC CheckForSystemEvents( void ) {
 	static uint32_t nextLVGLTick = 0;
 	KeyboardEvent* theEvent = NULL;
-
 	uint32_t tickNow = 0;
-	uint16_t lastMouseX = 0;
-	uint16_t lastMouseY = 0;
 
 	tickNow = systemGetTicks( );
+
+	if ( tickNow >= nextLVGLTick && videoUIHasFocus( ) ) {
+		lv_timer_handler( );
+		nextLVGLTick = tickNow + 50;
+	}
 
 	if ( keyboardEventCount ) {
 		theEvent = &keyboardEvents[ keyboardEventPos++ ];
@@ -4055,85 +4505,6 @@ LOCALPROC CheckForSystemEvents(void) {
 			keyboardEventCount = 0;
 		}
 	}
-
-	scanKeys( );
-
-	inputKeysDown = keysDown( );
-	inputKeysHeld = keysHeld( );
-	inputKeysUp = keysUp( );
-
-	if ( ( inputKeysDown & KEY_TOUCH ) || ( inputKeysHeld & KEY_TOUCH ) )
-		touchRead( &inputTouchPos );
-
-	if ( tickNow >= nextLVGLTick && videoUIHasFocus( ) ) {
-		lv_timer_handler( );
-		nextLVGLTick = tickNow + 50;
-	}
-
-	if ( inputKeysHeld ) {
-		switch ( inputMouseMode ) {
-			case UI_SEL_MOUSE_MODE_DPAD:
-				inputMouseMove_DPAD( );
-				break;
-			case UI_SEL_MOUSE_MODE_ABXY:
-				inputMouseMove_ABXY( );
-				break;
-			case UI_SEL_MOUSE_MODE_SCALED:
-				inputMouseMove_Scaled( );
-				break;
-			case UI_SEL_MOUSE_MODE_TRACKPAD: 
-				inputMouseMove_Trackpad( );
-			default:
-				break;
-		};
-	}
-
-	if ( inputKeysDown || inputKeysHeld || inputKeysUp ) {
-		switch ( inputArrowMapping ) {
-			case UI_SEL_ARROWK_DPAD:
-				inputArrowMove_DPAD( );
-				break;
-			case UI_SEL_ARROWK_ABXY:
-				inputArrowMove_ABXY( );
-				break;
-			default: break;
-		};
-	}
-
-	if ( ( CurMouseH != lastMouseX ) || ( CurMouseV != lastMouseY ) ) {
-		videoScrollX = CurMouseH - ( SCREEN_WIDTH / 2 );
-		videoScrollY = CurMouseV - ( SCREEN_HEIGHT / 2 );
-
-		videoScrollX = ( videoScrollX < 0 ) ? 0 : videoScrollX;
-		videoScrollX = ( videoScrollX > ( vMacScreenWidth - SCREEN_WIDTH ) ) ? vMacScreenWidth - SCREEN_WIDTH : videoScrollX;
-
-		videoScrollY = ( videoScrollY < 0 ) ? 0 : videoScrollY;
-		videoScrollY = ( videoScrollY > ( vMacScreenHeight - SCREEN_HEIGHT ) ) ? vMacScreenHeight - SCREEN_HEIGHT : videoScrollY;
-
-		renderNeedsRefresh = 1;
-	}
-
-	if ( inputKeysDown & inputMouseButtonBit )
-		MyMouseButtonSet( trueblnr );
-
-	if ( inputKeysUp & inputMouseButtonBit )
-		MyMouseButtonSet( falseblnr );	
-
-	if ( inputKeysUp & KEY_START ) {
-		if ( videoMacMsgBGOn ) {
-			videoMacMsgBGOn = 0;
-
-			bgHide( videoMacMsgBG );
-			MacMsgDisplayOff( );
-		}
-	}
-
-	if ( inputKeysUp & KEY_SELECT ) {
-		videoSwapScreens( );
-	}
-
-	lastMouseX = CurMouseH;
-	lastMouseY = CurMouseV;
 }
 
 /*
@@ -4199,7 +4570,7 @@ label_retry:
 #endif
 		)
 	{
-		CheckMouseState();
+		CheckInputState();
 	}
 
 	OnTrueTime = TrueEmulatedTime;
@@ -4332,6 +4703,7 @@ LOCALFUNC blnr InitOSGLU(void)
 	if (dbglog_open())
 #endif
 	if ( InitFS( ) )
+	if ( InitInsertDiskUI( ) )
 	if (Screen_Init())
 	if (AllocMyMemory())
 #if CanGetAppPath

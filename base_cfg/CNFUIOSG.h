@@ -24,10 +24,10 @@
 #include <assert.h>
 
 #define CanGetAppPath 1
-#define HaveAppPathLink 0
+#define HaveAppPathLink 1
 #define HaveSysctlPath 0
 
-#define EnableDragDrop 0
+#define EnableDragDrop 1
 #define WantOSGLUDSI 1
 
 #define kStrAppName "Mini vMac"

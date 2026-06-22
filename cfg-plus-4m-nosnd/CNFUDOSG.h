@@ -47,12 +47,12 @@
 #define MayFullScreen 1
 #define MayNotFullScreen 1
 #define WantInitMagnify 0
-#define EnableMagnify 1
+#define EnableMagnify 0
 #define MyWindowScale 1
 #define UseColorImage 1
 #define WantInitRunInBackground 0
 #define WantInitNotAutoSlow 1
-#define WantInitSpeedValue -1
+#define WantInitSpeedValue 0
 #define WantEnblCtrlInt 1
 #define WantEnblCtrlRst 1
 #define WantEnblCtrlKtg 1

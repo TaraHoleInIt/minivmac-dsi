@@ -37,11 +37,11 @@
 #define EmVidCard 0
 
 #define MaxATTListN 16
-#define IncludeExtnPbufs 0
-#define IncludeExtnHostTextClipExchange 0
+#define IncludeExtnPbufs 1
+#define IncludeExtnHostTextClipExchange 1
 
 #define Sony_SupportDC42 1
-#define Sony_SupportTags 0
+#define Sony_SupportTags 1
 #define Sony_WantChecksumsUpdated 0
 #define Sony_VerifyChecksums 0
 #define CaretBlinkTime 0x03

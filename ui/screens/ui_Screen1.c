@@ -5,7 +5,7 @@
 
 #include "../ui.h"
 
-lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_Label14 = NULL;lv_obj_t *ui_uiDropdownArrowKeyMapping = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiEscapeButton = NULL;lv_obj_t *ui_Label13 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
+lv_obj_t *ui_Screen1 = NULL;lv_obj_t *ui_TabView1 = NULL;lv_obj_t *ui_uiTabPageDisplay = NULL;lv_obj_t *ui_Label15 = NULL;lv_obj_t *ui_uiSwitchSubpixelMode = NULL;lv_obj_t *ui_Label1 = NULL;lv_obj_t *ui_uiDropdownSubpxTop = NULL;lv_obj_t *ui_Label2 = NULL;lv_obj_t *ui_uiDropdownSubpxBottom = NULL;lv_obj_t *ui_Label4 = NULL;lv_obj_t *ui_uiSwitchScale = NULL;lv_obj_t *ui_Label3 = NULL;lv_obj_t *ui_uiSwitchInvert = NULL;lv_obj_t *ui_uiTabPageInsert = NULL;lv_obj_t *ui_uiTabPageEmulator = NULL;lv_obj_t *ui_Label9 = NULL;lv_obj_t *ui_uiDropdownEmuSpeed = NULL;lv_obj_t *ui_Label10 = NULL;lv_obj_t *ui_uiSwitchSound = NULL;lv_obj_t *ui_uiButtonReset = NULL;lv_obj_t *ui_Label11 = NULL;lv_obj_t *ui_uiButtonExit = NULL;lv_obj_t *ui_Label6 = NULL;lv_obj_t *ui_uiTabPageMouse = NULL;lv_obj_t *ui_Label7 = NULL;lv_obj_t *ui_uiDropdownMouseMode = NULL;lv_obj_t *ui_Label5 = NULL;lv_obj_t *ui_uiSliderAcceleration = NULL;lv_obj_t *ui_Label8 = NULL;lv_obj_t *ui_uiDropdownMouseButton = NULL;lv_obj_t *ui_Label14 = NULL;lv_obj_t *ui_uiDropdownArrowKeyMapping = NULL;lv_obj_t *ui_uiTabPageKeyboard = NULL;lv_obj_t *ui_uiKeyboardTextArea = NULL;lv_obj_t *ui_uiKeyboardKeyboard = NULL;lv_obj_t *ui_uiBackspaceButton = NULL;lv_obj_t *ui_Label12 = NULL;lv_obj_t *ui_uiEscapeButton = NULL;lv_obj_t *ui_Label13 = NULL;lv_obj_t *ui_uiCommandCheckbox = NULL;lv_obj_t *ui_uiOptionCheckbox = NULL;
 // event funtions
 void ui_event_uiSwitchSubpixelMode( lv_event_t * e) {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -258,6 +258,8 @@ lv_obj_set_height( ui_uiSwitchInvert, 16);
 lv_obj_set_x( ui_uiSwitchInvert, -5 );
 lv_obj_set_y( ui_uiSwitchInvert, -30 );
 lv_obj_set_align( ui_uiSwitchInvert, LV_ALIGN_CENTER );
+
+ui_uiTabPageInsert = lv_tabview_add_tab(ui_TabView1, "Insert");
 
 ui_uiTabPageEmulator = lv_tabview_add_tab(ui_TabView1, "Emulator");
 lv_obj_set_flex_flow(ui_uiTabPageEmulator,LV_FLEX_FLOW_ROW_WRAP);
@@ -512,6 +514,7 @@ ui_Label4= NULL;
 ui_uiSwitchScale= NULL;
 ui_Label3= NULL;
 ui_uiSwitchInvert= NULL;
+ui_uiTabPageInsert= NULL;
 ui_uiTabPageEmulator= NULL;
 ui_Label9= NULL;
 ui_uiDropdownEmuSpeed= NULL;

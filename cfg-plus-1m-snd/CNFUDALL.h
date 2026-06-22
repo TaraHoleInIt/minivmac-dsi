@@ -19,10 +19,10 @@
 
 #define NumDrives 6
 #define NonDiskProtect 1
-#define IncludeSonyRawMode 0
-#define IncludeSonyGetName 0
-#define IncludeSonyNew 0
-#define IncludeSonyNameNew 0
+#define IncludeSonyRawMode 1
+#define IncludeSonyGetName 1
+#define IncludeSonyNew 1
+#define IncludeSonyNameNew 1
 
 #define vMacScreenHeight 342
 #define vMacScreenWidth 512
