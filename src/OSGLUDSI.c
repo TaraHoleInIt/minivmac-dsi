@@ -1067,8 +1067,6 @@ LOCALINLINEFUNC int videoGetEvenTexture( void ) {
 }
 
 LOCALINLINEFUNC int videoGetGreyTexture( void ) {
-	int tex = 0;
-
 	if ( videoIsSubpixel == 1 ) {
 		if ( videoSetup == VIDEO_SCREEN_ON_MAIN_UI_ON_TOUCH )
 			return ( videoSubpixelMain == UI_SEL_SUBPX_ORDER_RGB ) ? palSubpixelRGB : palSubpixelBGR;
@@ -3000,7 +2998,7 @@ LOCALPROC MySound_UnInit(void)
 
 static mm_word audioCallback( mm_word length, mm_addr dest, mm_stream_formats format ) {
 	DC_FlushRange( TheSoundBuffer, dbhBufferSize );
-	my_audio_callback( &cur_audio, dest, length );
+	my_audio_callback( ( void* ) &cur_audio, dest, length );
 
 	return length;
 }
@@ -4492,7 +4490,7 @@ LOCALPROC CheckForSystemEvents( void ) {
 
 	if ( tickNow >= nextLVGLTick && videoUIHasFocus( ) ) {
 		lv_timer_handler( );
-		nextLVGLTick = tickNow + 50;
+		nextLVGLTick = tickNow + 100;
 	}
 
 	if ( keyboardEventCount ) {
@@ -4669,8 +4667,8 @@ LOCALFUNC blnr InitFS( void ) {
 	int len = 0;
 
 	// if ( nitroFSInit( NULL ) ) {
-	// 	app_parent = "nitro:/data/minivmac/";
-	// 	pref_dir = "nitro:/data/minivmac/";
+	// 	strncpy( app_parent, "nitro:/data/minivmac/", sizeof( app_parent ) - 1 );
+	// 	strncpy( pref_dir, "nitro:/data/minivmac/", sizeof( pref_dir ) - 1 );
 
 	// 	chdir( app_parent );
 	// 	return trueblnr;
@@ -4768,9 +4766,6 @@ LOCALPROC UnInitOSGLU(void)
 
 int main(int argc, char **argv)
 {
-	uint32_t exitTime = 0;
-	uint32_t timeNow = 0;
-
 	my_argc = argc;
 	my_argv = argv;
 
