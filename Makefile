@@ -33,12 +33,12 @@ SDIMAGE		:= image.bin
 # -----------------
 
 SOURCEDIRS	:= src lvgl/src ui
-INCLUDEDIRS	:= src base_cfg cfg-$(VARIANT) lvgl . ui
+INCLUDEDIRS	:= src base_cfg $(VARIANT) lvgl . ui
 GFXDIRS		:= graphics
 BINDIRS		:= data
 AUDIODIRS	:= audio
 # List of folders to combine into the root of NitroFS:
-NITROFSDIR	:= 
+# NITROFSDIR	:= nitrofs
 
 # Defines passed to all files
 # ---------------------------
